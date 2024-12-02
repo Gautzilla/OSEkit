@@ -15,7 +15,11 @@ from OSmOSE.config import (
     TIMESTAMP_FORMAT_AUDIO_FILE,
 )
 from OSmOSE.config import global_logging_context as glc
-from OSmOSE.utils.audio_utils import get_all_audio_files, get_audio_metadata
+from OSmOSE.utils.audio_utils import (
+    check_audio,
+    get_all_audio_files,
+    get_audio_metadata,
+)
 from OSmOSE.utils.core_utils import (
     change_owner_group,
     chmod_if_needed,
@@ -381,7 +385,10 @@ class Dataset:
         return metadata["is_built"][0]
 
     def _build_audio(
-        self, audio_path: Path, date_template: str, force_upload: bool
+        self,
+        audio_path: Path,
+        date_template: str,
+        force_upload: bool,
     ) -> pd.DataFrame:
         """Move all audio to the raw_audio folder, along with a timestamp.csv file.
 
@@ -411,7 +418,7 @@ class Dataset:
         )
 
         try:
-            self._check_audio(audio_metadata=audio_metadata, timestamps=timestamps)
+            check_audio(audio_metadata=audio_metadata, timestamps=timestamps)
         except FileNotFoundError as e:
             if not force_upload:
                 self.logger.exception(
@@ -436,7 +443,8 @@ class Dataset:
                 )
                 raise
             self.logger.warning(
-                "Your audio files failed the following test(s):\n%s", exc_info=e
+                "Your audio files failed the following test(s):\n%s",
+                exc_info=e,
             )
 
         file_metadata = self._create_file_metadata(audio_metadata, timestamps)
@@ -463,38 +471,6 @@ class Dataset:
             file.replace(destination_folder / file.name)
 
         return file_metadata
-
-    def _check_audio(
-        self, audio_metadata: pd.DataFrame, timestamps: pd.DataFrame
-    ) -> bool:
-        if any(
-            (unlisted_file := file) not in timestamps["filename"].unique()
-            for file in audio_metadata["filename"]
-        ):
-            message = f"{unlisted_file} has not been found in timestamp.csv"
-            raise FileNotFoundError(message)
-
-        if any(
-            (missing_file := filename) not in audio_metadata["filename"].unique()
-            for filename in timestamps["filename"]
-        ):
-            message = f"{missing_file} is listed in timestamp.csv but hasn't be found."
-            raise FileNotFoundError(message)
-
-        if len(audio_metadata["origin_sr"].unique()) > 1:
-            message = (
-                "Your files do not have all the same sampling rate. "
-                f"Found sampling rates: {', '.join(str(sr) + ' Hz' for sr in audio_metadata['origin_sr'].unique())}."
-            )
-            raise ValueError(message)
-
-        mean_duration = audio_metadata["duration"].mean()
-        if any(
-            abs(mean_duration - d) > 0.05 * mean_duration
-            for d in audio_metadata["duration"].unique()
-        ):
-            message = "Your audio files have large duration discrepancies."
-            raise ValueError(message)
 
     def _parse_timestamp_df(
         self,
