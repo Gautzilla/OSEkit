@@ -313,6 +313,7 @@ class Dataset:
         file_metadata = self._build_audio(
             audio_path=audio_path,
             date_template=date_template,
+            force_upload=force_upload,
         )
 
         self._write_metadata(file_metadata=file_metadata)
@@ -379,7 +380,9 @@ class Dataset:
             return False
         return metadata["is_built"][0]
 
-    def _build_audio(self, audio_path: Path, date_template: str) -> pd.DataFrame:
+    def _build_audio(
+        self, audio_path: Path, date_template: str, force_upload: bool
+    ) -> pd.DataFrame:
         """Move all audio to the raw_audio folder, along with a timestamp.csv file.
 
         If no timestamp.csv is found, it is created by parsing audio file names.
@@ -407,6 +410,35 @@ class Dataset:
             get_audio_metadata(file) for file in audio_files
         )
 
+        try:
+            self._check_audio(audio_metadata=audio_metadata, timestamps=timestamps)
+        except FileNotFoundError as e:
+            if not force_upload:
+                self.logger.exception(
+                    "Please fix the following error or set the force_upload parameter to True: \n%s",
+                    exc_info=e,
+                )
+                raise
+            self.logger.warning(
+                "Timestamp.csv and audio files didn't match. Creating new timestamp.csv files from audio. Detail: \n%s",
+                exc_info=e,
+            )
+            timestamps = parse_timestamps_csv(
+                filenames=[file.name for file in audio_files],
+                datetime_template=date_template,
+                timezone=self.timezone,
+            )
+        except ValueError as e:
+            if not force_upload:
+                self.logger.exception(
+                    "Please fix the following error or set the force_upload parameter to True: \n%s",
+                    exc_info=e,
+                )
+                raise
+            self.logger.warning(
+                "Your audio files failed the following test(s):\n%s", exc_info=e
+            )
+
         file_metadata = self._create_file_metadata(audio_metadata, timestamps)
 
         folder_name = (
@@ -431,6 +463,38 @@ class Dataset:
             file.replace(destination_folder / file.name)
 
         return file_metadata
+
+    def _check_audio(
+        self, audio_metadata: pd.DataFrame, timestamps: pd.DataFrame
+    ) -> bool:
+        if any(
+            (unlisted_file := file) not in timestamps["filename"].unique()
+            for file in audio_metadata["filename"]
+        ):
+            message = f"{unlisted_file} has not been found in timestamp.csv"
+            raise FileNotFoundError(message)
+
+        if any(
+            (missing_file := filename) not in audio_metadata["filename"].unique()
+            for filename in timestamps["filename"]
+        ):
+            message = f"{missing_file} is listed in timestamp.csv but hasn't be found."
+            raise FileNotFoundError(message)
+
+        if len(audio_metadata["origin_sr"].unique()) > 1:
+            message = (
+                "Your files do not have all the same sampling rate. "
+                f"Found sampling rates: {', '.join(str(sr) + ' Hz' for sr in audio_metadata['origin_sr'].unique())}."
+            )
+            raise ValueError(message)
+
+        mean_duration = audio_metadata["duration"].mean()
+        if any(
+            abs(mean_duration - d) > 0.05 * mean_duration
+            for d in audio_metadata["duration"].unique()
+        ):
+            message = "Your audio files have large duration discrepancies."
+            raise ValueError(message)
 
     def _parse_timestamp_df(
         self,
@@ -473,22 +537,6 @@ class Dataset:
         audio_metadata: pd.DataFrame,
         timestamps: pd.DataFrame,
     ) -> pd.DataFrame:
-        if any(
-            (unlisted_file := file) not in timestamps["filename"].unique()
-            for file in audio_metadata["filename"]
-        ):
-            message = f"{unlisted_file} has not been found in timestamp.csv"
-            self.logger.error(message)
-            raise FileNotFoundError(message)
-
-        if any(
-            (missing_file := filename) not in audio_metadata["filename"].unique()
-            for filename in timestamps["filename"]
-        ):
-            message = f"{missing_file} is listed in timestamp.csv but hasn't be found."
-            self.logger.error(message)
-            raise FileNotFoundError(message)
-
         file_metadata = audio_metadata.merge(timestamps, on="filename")
         file_metadata["duration_inter_file"] = audio_metadata["duration"].diff()
         return file_metadata
