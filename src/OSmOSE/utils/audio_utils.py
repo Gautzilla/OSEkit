@@ -2,7 +2,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from OSmOSE.config import AUDIO_METADATA, SUPPORTED_AUDIO_FORMAT
+from OSmOSE.config import (
+    AUDIO_METADATA,
+    BUILD_DURATION_DELTA_THRESHOLD,
+    SUPPORTED_AUDIO_FORMAT,
+)
 
 
 def is_supported_audio_format(filename: Path) -> bool:
@@ -109,7 +113,7 @@ def check_audio(
 
     mean_duration = audio_metadata["duration"].mean()
     if any(
-        abs(mean_duration - d) > 0.05 * mean_duration
+        abs(mean_duration - d) > BUILD_DURATION_DELTA_THRESHOLD * mean_duration
         for d in audio_metadata["duration"].unique()
     ):
         message = "Your audio files have large duration discrepancies."
