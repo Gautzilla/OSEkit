@@ -422,12 +422,12 @@ class Dataset:
         except FileNotFoundError as e:
             if not force_upload:
                 self.logger.exception(
-                    "Please fix the following error or set the force_upload parameter to True: \n%s",
+                    "Please fix the following error or set the force_upload parameter to True: \n",
                     exc_info=e,
                 )
                 raise
             self.logger.warning(
-                "Timestamp.csv and audio files didn't match. Creating new timestamp.csv files from audio. Detail: \n%s",
+                "Timestamp.csv and audio files didn't match. Creating new timestamp.csv files from audio. Detail: \n",
                 exc_info=e,
             )
             timestamps = parse_timestamps_csv(
@@ -438,12 +438,12 @@ class Dataset:
         except ValueError as e:
             if not force_upload:
                 self.logger.exception(
-                    "Please fix the following error or set the force_upload parameter to True: \n%s",
+                    "Please fix the following error or set the force_upload parameter to True: \n",
                     exc_info=e,
                 )
                 raise
             self.logger.warning(
-                "Your audio files failed the following test(s):\n%s",
+                "Your audio files failed the following test(s):\n",
                 exc_info=e,
             )
 
