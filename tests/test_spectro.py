@@ -14,6 +14,7 @@ from OSmOSE.data.audio_dataset import AudioDataset
 from OSmOSE.data.audio_file import AudioFile
 from OSmOSE.data.spectro_data import SpectroData
 from OSmOSE.data.spectro_dataset import SpectroDataset
+from OSmOSE.data.spectro_file import SpectroFile
 from OSmOSE.utils.audio_utils import generate_sample_audio
 
 if TYPE_CHECKING:
@@ -62,6 +63,87 @@ def test_spectrogram_shape(
     for audio, spectro in zip(dataset.data, spectro_dataset.data):
         assert spectro.shape == spectro.get_value().shape
         assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.shape))
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "date_begin", "sft"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            pd.Timestamp("2024-01-01 12:00:00"),
+            ShortTimeFFT(hamming(1_024), 1024, 48_000),
+            id="second_precision",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+            },
+            pd.Timestamp("2024-01-01 12:00:00.123"),
+            ShortTimeFFT(hamming(512), 512, 1_024),
+            id="millisecond_precision",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            pd.Timestamp("2024-01-01 12:00:00.123456"),
+            ShortTimeFFT(hamming(1_024), 1_024, 48_000),
+            id="microsecond_precision",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            pd.Timestamp("2024-01-01 12:00:00.123456789"),
+            ShortTimeFFT(hamming(1_024), 1_024, 48_000),
+            id="nanosecond_precision",
+        ),
+        pytest.param(
+            {
+                "duration": 1.123456789,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            pd.Timestamp("2024-01-01 12:00:00.123456789"),
+            ShortTimeFFT(hamming(1_024), 1_024, 48_000),
+            id="nanosecond_precision_end",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_spectro_parameters_in_npz_files(
+    tmp_path: Path,
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    date_begin: pd.Timestamp,
+    sft: ShortTimeFFT,
+) -> None:
+
+    af = next(AudioFile(f, begin=date_begin) for f in tmp_path.glob("*.wav"))
+
+    ad = AudioData.from_files([af])
+    sd = SpectroData.from_audio_data(ad, sft)
+    sd.write(tmp_path / "npz")
+    file = tmp_path / "npz" / f"{sd}.npz"
+    sf = SpectroFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
+
+    assert sf.begin == ad.begin
+    assert sf.end == ad.end
+    assert np.array_equal(sf.freq, sft.f)
+    assert sf.hop == sft.hop
+    assert sf.mfft == sft.mfft
+    assert sf.sample_rate == sft.fs
+    assert np.array_equal(sf.time, sft.t(ad.shape))
+
 
 @pytest.mark.parametrize(
     ("audio_files", "nb_chunks", "sft"),
