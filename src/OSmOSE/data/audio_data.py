@@ -178,7 +178,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         if stop_frame < -1 or stop_frame > self.shape:
             raise ValueError("Stop_frame must be lower than the length of the data.")
 
-        start_timestamp = self.begin + Timedelta(seconds=start_frame / self.sample_rate)
+        start_timestamp = self.begin + Timedelta(
+            seconds=round(start_frame / self.sample_rate, 9)
+        )
         stop_timestamp = (
             self.end
             if stop_frame == -1
