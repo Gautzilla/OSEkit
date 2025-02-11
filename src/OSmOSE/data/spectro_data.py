@@ -184,6 +184,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         hop = [self.fft.hop]
         fs = [self.fft.fs]
         mfft = [self.fft.mfft]
+        timestamps = (str(t) for t in (self.begin, self.end))
         np.savez(
             file=folder / f"{self}.npz",
             fs=fs,
@@ -193,6 +194,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             hop=hop,
             sx=sx,
             mfft=mfft,
+            timestamps="_".join(timestamps),
         )
 
     def split(self, nb_subdata: int = 2) -> list[SpectroData]:
@@ -210,7 +212,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         split_frames = list(
-            np.linspace(0, self.audio_data.shape, nb_subdata + 1, dtype=int)
+            np.linspace(0, self.audio_data.shape, nb_subdata + 1, dtype=int),
         )
         split_frames = [
             self.fft.nearest_k_p(frame) if idx < (len(split_frames) - 1) else frame
