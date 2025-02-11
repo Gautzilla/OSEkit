@@ -142,7 +142,10 @@ def test_spectro_parameters_in_npz_files(
     assert sf.hop == sft.hop
     assert sf.mfft == sft.mfft
     assert sf.sample_rate == sft.fs
-    assert np.array_equal(sf.time, sft.t(ad.shape))
+    nb_time_bins = sft.t(ad.shape).shape[0]
+    assert np.array_equal(
+        sf.time, np.arange(nb_time_bins) * ad.duration.total_seconds() / nb_time_bins
+    )
 
 
 @pytest.mark.parametrize(

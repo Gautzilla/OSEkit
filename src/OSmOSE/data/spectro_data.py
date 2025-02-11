@@ -178,11 +178,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         super().create_directories(path=folder)
         sx = self.get_value() if sx is None else sx
-        time = (
-            self.fft.t(self.audio_data.shape)
-            if self.audio_data is not None
-            else next(self.files).time
-        )
+        time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
         window = self.fft.win
         hop = [self.fft.hop]
