@@ -30,7 +30,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     """
 
-    def __init__(self, data: list[AudioData]) -> None:
+    def __init__(self, data: list[AudioData], name: str | None = None) -> None:
         """Initialize an AudioDataset."""
         if (
             len(
@@ -44,7 +44,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         else:
             for empty_data in (data for data in data if data.sample_rate is None):
                 empty_data.sample_rate = min(sample_rates)
-        super().__init__(data)
+        super().__init__(data, name)
 
     @property
     def sample_rate(self) -> set[float] | float:
@@ -97,10 +97,13 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             The deserialized AudioDataset.
 
         """
-        return cls([AudioData.from_dict(d) for d in dictionary.values()])
+        return cls(
+            [AudioData.from_dict(d) for d in dictionary.values()],
+            name=dictionary["name"],
+        )
 
     @classmethod
-    def from_folder(
+    def from_folder(  # noqa: PLR0913
         cls,
         folder: Path,
         strptime_format: str,
@@ -109,6 +112,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         timezone: str | pytz.timezone | None = None,
         bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
+        name: str | None = None,
         **kwargs: any,
     ) -> AudioDataset:
         """Return an AudioDataset from a folder containing the audio files.
@@ -141,6 +145,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             If bound is set to "files", this parameter has no effect.
             If provided, audio data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        name: str|None
+            Name of the dataset.
         kwargs: any
             Keyword arguments passed to the BaseDataset.from_folder classmethod.
 
@@ -161,18 +167,20 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             timezone=timezone,
             bound=bound,
             data_duration=data_duration,
+            name=name,
             **kwargs,
         )
         return cls.from_base_dataset(base_dataset)
 
     @classmethod
-    def from_files(
+    def from_files(  # noqa: PLR0913
         cls,
         files: list[AudioFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
+        name: str | None = None,
     ) -> AudioDataset:
         """Return an AudioDataset object from a list of AudioFiles.
 
@@ -196,6 +204,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             If bound is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        name: str|None
+            Name of the dataset.
 
         Returns
         -------
@@ -203,7 +213,14 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         The DataBase object.
 
         """
-        base = BaseDataset.from_files(files, begin, end, bound, data_duration)
+        base = BaseDataset.from_files(
+            files=files,
+            begin=begin,
+            end=end,
+            bound=bound,
+            data_duration=data_duration,
+            name=name,
+        )
         return cls.from_base_dataset(base)
 
     @classmethod
@@ -215,6 +232,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         """Return an AudioDataset object from a BaseDataset object."""
         return cls(
             [AudioData.from_base_data(data, sample_rate) for data in base_dataset.data],
+            name=base_dataset.name,
         )
 
     @classmethod
