@@ -200,7 +200,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         plt.close()
 
     def write(
-        self, folder: Path, sx: np.ndarray | None = None, link: bool = False
+        self,
+        folder: Path,
+        sx: np.ndarray | None = None,
+        link: bool = False,
     ) -> None:
         """Write the Spectro data to file.
 
@@ -237,11 +240,27 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             timestamps="_".join(timestamps),
         )
         if link:
-            file = SpectroFile(
-                path=folder / f"{self}.npz",
-                strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
-            )
-            self.items = SpectroData.from_files([file]).items
+            self.link(folder=folder)
+
+    def link(self, folder: Path) -> None:
+        """Link the SpectroData to a SpectroFile in the folder.
+
+        The given folder should contain a file named "str(self).npz".
+        Linking is intended for SpectroData objects that have already been written to disk.
+        After linking, the SpectroData will have a single item with the same
+        properties of the target SpectroFile.
+
+        Parameters
+        ----------
+        folder: Path
+            Folder in which is located the SpectroFile to which the SpectroData instance should be linked.
+
+        """
+        file = SpectroFile(
+            path=folder / f"{self}.npz",
+            strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        )
+        self.items = SpectroData.from_files([file]).items
 
     def split(self, nb_subdata: int = 2) -> list[SpectroData]:
         """Split the spectro data object in the specified number of spectro subdata.

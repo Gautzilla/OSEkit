@@ -152,11 +152,27 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             subtype=subtype,
         )
         if link:
-            file = AudioFile(
-                path=folder / f"{self}.wav",
-                strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
-            )
-            self.items = AudioData.from_files([file]).items
+            self.link(folder=folder)
+
+    def link(self, folder: Path) -> None:
+        """Link the AudioData to an AudioFile in the folder.
+
+        The given folder should contain a file named "str(self).wav".
+        Linking is intended for AudioData objects that have already been written to disk.
+        After linking, the AudioData will have a single item with the same
+        properties of the target AudioFile.
+
+        Parameters
+        ----------
+        folder: Path
+            Folder in which is located the AudioFile to which the AudioData instance should be linked.
+
+        """
+        file = AudioFile(
+            path=folder / f"{self}.wav",
+            strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        )
+        self.items = AudioData.from_files([file]).items
 
     def _get_item_value(self, item: AudioItem) -> np.ndarray:
         """Return the resampled (if needed) data from the audio item."""

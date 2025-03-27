@@ -99,9 +99,9 @@ class BaseDataset(Generic[TData, TFile], Event):
         folder: Path
             Folder in which to write the data.
         link: bool
-            If True, the SpectroData will be bound to the written npz file.
+            If True, the Data will be bound to the written file.
             Its items will be replaced with a single item, which will match the whole
-            new SpectroFile.
+            new File.
 
         """
         for data in self.data:
