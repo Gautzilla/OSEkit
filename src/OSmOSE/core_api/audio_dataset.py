@@ -98,7 +98,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
         """
         return cls(
-            [AudioData.from_dict(d) for d in dictionary.values()],
+            [AudioData.from_dict(d) for key, d in dictionary.items() if key != "name"],
             name=dictionary["name"],
         )
 
@@ -167,10 +167,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             timezone=timezone,
             bound=bound,
             data_duration=data_duration,
-            name=name,
             **kwargs,
         )
-        return cls.from_base_dataset(base_dataset)
+        return cls.from_base_dataset(base_dataset=base_dataset, name=name)
 
     @classmethod
     def from_files(  # noqa: PLR0913
@@ -219,20 +218,20 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             end=end,
             bound=bound,
             data_duration=data_duration,
-            name=name,
         )
-        return cls.from_base_dataset(base)
+        return cls.from_base_dataset(base, name=name)
 
     @classmethod
     def from_base_dataset(
         cls,
         base_dataset: BaseDataset,
         sample_rate: float | None = None,
+        name: str | None = None,
     ) -> AudioDataset:
         """Return an AudioDataset object from a BaseDataset object."""
         return cls(
             [AudioData.from_base_data(data, sample_rate) for data in base_dataset.data],
-            name=base_dataset.name,
+            name=name,
         )
 
     @classmethod

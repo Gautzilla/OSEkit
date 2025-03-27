@@ -252,6 +252,7 @@ def test_dataset_build(
         strptime_format=timestamp_format,
         bound="files",
         timezone=timezone,
+        name="original",
     )
 
     dataset = Dataset(

@@ -38,6 +38,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         """Instantiate a Dataset object from the Data objects."""
         self.data = data
         self._name = name
+        self._has_default_name = name is None
 
     def __str__(self) -> str:
         """Overwrite __str__."""
@@ -62,6 +63,11 @@ class BaseDataset(Generic[TData, TFile], Event):
     @name.setter
     def name(self, name: str | None) -> None:
         self._name = name
+
+    @property
+    def has_default_name(self) -> bool:
+        """Return True if the dataset has a default name, False if it has a given name."""
+        return self._has_default_name
 
     @property
     def begin(self) -> Timestamp:
@@ -217,7 +223,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         if bound == "files":
             data_base = [BaseData.from_files([f]) for f in files]
             data_base = BaseData.remove_overlaps(data_base)
-            return cls(data_base)
+            return cls(data=data_base, name=name)
 
         if not begin:
             begin = min(file.begin for file in files)
