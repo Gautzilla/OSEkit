@@ -34,13 +34,14 @@ class BaseDataset(Generic[TData, TFile], Event):
     that simplify repeated operations on the data.
     """
 
-    def __init__(self, data: list[TData]) -> None:
+    def __init__(self, data: list[TData], name: str | None = None) -> None:
         """Instantiate a Dataset object from the Data objects."""
         self.data = data
+        self._name = name
 
     def __str__(self) -> str:
         """Overwrite __str__."""
-        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+        return self.name
 
     def __eq__(self, other: BaseDataset) -> bool:
         """Overwrite __eq__."""
@@ -48,6 +49,19 @@ class BaseDataset(Generic[TData, TFile], Event):
             other.data,
             key=lambda e: (e.begin, e.end),
         )
+
+    @property
+    def name(self) -> str:
+        """Name of the dataset."""
+        return (
+            self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+            if self._name is None
+            else self._name
+        )
+
+    @name.setter
+    def name(self, name: str | None) -> None:
+        self._name = name
 
     @property
     def begin(self) -> Timestamp:
