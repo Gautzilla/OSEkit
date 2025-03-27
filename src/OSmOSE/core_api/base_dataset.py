@@ -91,7 +91,9 @@ class BaseDataset(Generic[TData, TFile], Event):
         ]
         return max(set(data_durations), key=data_durations.count)
 
-    def write(self, folder: Path, link: bool = False) -> None:
+    def write(
+        self, folder: Path, link: bool = False, first: int = 0, last: int = -1
+    ) -> None:
         """Write all data objects in the specified folder.
 
         Parameters
@@ -102,9 +104,13 @@ class BaseDataset(Generic[TData, TFile], Event):
             If True, the Data will be bound to the written file.
             Its items will be replaced with a single item, which will match the whole
             new File.
+        first: int
+            Index of the first data object to write.
+        last: int
+            Index after the last data object to write.
 
         """
-        for data in self.data:
+        for data in self.data[first:last]:
             data.write(folder=folder, link=link)
 
     def to_dict(self) -> dict:

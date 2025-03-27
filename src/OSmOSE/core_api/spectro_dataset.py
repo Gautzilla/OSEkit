@@ -68,20 +68,30 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         for file in self.files:
             file.move(folder)
 
-    def save_spectrogram(self, folder: Path) -> None:
+    def save_spectrogram(self, folder: Path, first: int = 0, last: int = -1) -> None:
         """Export all spectrogram data as png images in the specified folder.
 
         Parameters
         ----------
         folder: Path
             Folder in which the spectrograms should be saved.
+        first: int
+            Index of the first SpectroData object to export.
+        last: int
+            Index after the last SpectroData object to export.
+
 
         """
-        for data in self.data:
+        for data in self.data[first:last]:
             data.save_spectrogram(folder)
 
     def save_all(
-        self, matrix_folder: Path, spectrogram_folder: Path, link: bool = False
+        self,
+        matrix_folder: Path,
+        spectrogram_folder: Path,
+        link: bool = False,
+        first: int = 0,
+        last: int = -1,
     ) -> None:
         """Export both Sx matrices as npz files and spectrograms for each data.
 
@@ -95,9 +105,13 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             If True, the SpectroData will be bound to the written npz file.
             Its items will be replaced with a single item, which will match the whole
             new SpectroFile.
+        first: int
+            Index of the first SpectroData object to export.
+        last: int
+            Index after the last SpectroData object to export.
 
         """
-        for data in self.data:
+        for data in self.data[first:last]:
             sx = data.get_value()
             data.write(folder=matrix_folder, sx=sx, link=link)
             data.save_spectrogram(folder=spectrogram_folder, sx=sx)
