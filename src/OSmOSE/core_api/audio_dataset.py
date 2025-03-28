@@ -98,7 +98,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
         """
         return cls(
-            [AudioData.from_dict(d) for key, d in dictionary.items() if key != "name"],
+            [AudioData.from_dict(d) for d in dictionary["data"].values()],
             name=dictionary["name"],
         )
 

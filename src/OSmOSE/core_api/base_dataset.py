@@ -136,7 +136,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             The serialized dictionary representing the BaseDataset.
 
         """
-        return {str(d): d.to_dict() for d in self.data} | {"name": self._name}
+        return {"data": {str(d): d.to_dict() for d in self.data}, "name": self._name}
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> BaseDataset:
@@ -154,7 +154,7 @@ class BaseDataset(Generic[TData, TFile], Event):
 
         """
         return cls(
-            [BaseData.from_dict(d) for d in dictionary.values()],
+            [BaseData.from_dict(d) for d in dictionary["data"].values()],
             name=dictionary["name"],
         )
 
