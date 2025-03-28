@@ -47,6 +47,13 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         super().__init__(data, name)
 
     @property
+    def name(self) -> str:
+        """Name of the dataset."""
+        if self.has_default_name:
+            return f"{super().name}_audio"
+        return super().name
+
+    @property
     def sample_rate(self) -> set[float] | float:
         """Return the most frequent sample rate among sample rates of the data of this dataset of the audio data."""
         sample_rates = [data.sample_rate for data in self.data]

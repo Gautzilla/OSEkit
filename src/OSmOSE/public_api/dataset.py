@@ -217,7 +217,8 @@ class Dataset:
             ads.sample_rate = sample_rate
 
         if Analysis.AUDIO in analysis:
-            ads.name = ads.name if not is_spectro else f"{ads.name}_audio"
+            if is_spectro and name is not None:
+                ads.name = f"{ads.name}_audio"
             self._add_audio_dataset(ads=ads, subtype=subtype)
 
         if is_spectro:
