@@ -420,6 +420,7 @@ def test_reshape(
         begin=begin,
         end=end,
         data_duration=data_duration,
+        name=ads_name,
     )
     if sample_rate is not None:
         expected_ads.sample_rate = sample_rate
@@ -427,7 +428,7 @@ def test_reshape(
     ads_key = (
         ads_name
         if ads_name
-        else expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+        else f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)}_audio"
     )
 
     # The new dataset should be added to the datasets property
