@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import shutil
 import sys
-from enum import Flag, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
@@ -19,7 +18,8 @@ from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.job import Job_builder
-from OSmOSE.public_api import export_audio
+from OSmOSE.public_api import Analysis, export_audio, export_spectro
+from OSmOSE.public_api.export_spectro import write_spectro_files
 from OSmOSE.utils.core_utils import (
     file_indexes_per_batch,
     get_umask,
@@ -31,41 +31,6 @@ if TYPE_CHECKING:
     from scipy.signal import ShortTimeFFT
 
     from OSmOSE.core_api.audio_file import AudioFile
-
-
-class Analysis(Flag):
-    """Enum of flags that should be use to specify the type of analysis to run.
-
-    AUDIO:
-        Will add an AudioDataset to the datasets and write the reshaped audio files
-        to disk.
-        The new AudioDataset will be linked to the reshaped audio files rather than to
-        the original files.
-    MATRIX:
-        Will write the npz SpectroFiles to disk and link the SpectroDataset to
-        these files.
-    SPECTROGRAM:
-        Will export the spectrogram png images.
-
-    Multiple flags can be enabled thanks to the logical or | operator:
-    Analysis.AUDIO | Analysis.SPECTROGRAM will export both audio files and
-    spectrogram images.
-
-    >>> # Exporting both the reshaped audio and the spectrograms
-    >>> # (without the npz matrices):
-    >>> export = Analysis.AUDIO | Analysis.SPECTROGRAM
-    >>> Analysis.AUDIO in export
-    True
-    >>> Analysis.SPECTROGRAM in export
-    True
-    >>> Analysis.MATRIX in export
-    False
-
-    """
-
-    AUDIO = auto()
-    MATRIX = auto()
-    SPECTROGRAM = auto()
 
 
 class Dataset:
@@ -151,7 +116,7 @@ class Dataset:
 
         self.datasets = {}
 
-    def create_analysis(
+    def create_analysis(  # noqa: PLR0913
         self,
         analysis: Analysis,
         begin: Timestamp | None = None,
@@ -232,7 +197,7 @@ class Dataset:
 
         if is_spectro:
             sds = SpectroDataset.from_audio_dataset(audio_dataset=ads, fft=fft)
-            self._add_spectro_dataset(sds=sds, export=analysis)
+            self._add_spectro_dataset(sds=sds, analysis=analysis)
 
     def _add_audio_dataset(
         self,
@@ -319,25 +284,16 @@ class Dataset:
     def _add_spectro_dataset(
         self,
         sds: SpectroDataset,
-        export: Analysis,
+        analysis: Analysis,
     ) -> None:
-        sds.folder = self._get_spectro_dataset_subpath(sds=sds)
+        sds_folder = self._get_spectro_dataset_subpath(sds=sds)
 
-        if Analysis.MATRIX in export and Analysis.SPECTROGRAM in export:
-            sds.save_all(
-                matrix_folder=sds.folder / "welch",
-                spectrogram_folder=sds.folder / "spectrogram",
-                link=True,
-            )
-        elif Analysis.SPECTROGRAM in export:
-            sds.save_spectrogram(
-                folder=sds.folder / "spectrogram",
-            )
-        elif Analysis.MATRIX in export:
-            sds.write(
-                folder=sds.folder / "welch",
-                link=True,
-            )
+        self.export_spectro(
+            sds=sds,
+            folder=sds_folder,
+            analysis=analysis,
+            link=True,
+        )
 
         self.datasets[sds.name] = {"class": type(sds).__name__, "dataset": sds}
 
@@ -357,6 +313,65 @@ class Dataset:
             / "processed"
             / (ads_folder / fft_folder if sds.has_default_name is None else sds.name)
         )
+
+    def export_spectro(
+        self,
+        sds: SpectroDataset,
+        folder: Path,
+        analysis: Analysis,
+        link: bool = False,
+    ) -> None:
+        """Export spectro files to disk.
+
+        The tasks will be distributed to jobs if self.job_builder
+        is not None.
+
+        Parameters
+        ----------
+        sds: SpectroDataset
+            The SpectroDataset of which the data should be written.
+        folder: Path
+            The folder in which the files should be written.
+        analysis:
+            Flags that should be use to specify the type of analysis to run.
+            See Dataset.Analysis docstring for more info.
+        link: bool
+            If set to True, the ads data will be linked to the exported files.
+
+        """
+        if self.job_builder is None:
+            write_spectro_files(
+                sds=sds,
+                analysis=analysis,
+                link=link,
+            )
+            return
+
+        sds_json_path = f"{folder/sds.name}.json"
+        sds.write_json(folder)
+
+        batch_indexes = file_indexes_per_batch(
+            total_nb_files=len(sds.data),
+            nb_batches=self.job_builder.nb_jobs,
+        )
+
+        for start, stop in batch_indexes:
+            self.job_builder.build_job_file(
+                script_path=export_spectro.__file__,
+                script_args=f"--dataset-json-path {sds_json_path} "
+                f"--analysis {sum(v.value for v in list(analysis))}"
+                f"--output-folder {folder} "
+                f"--first {start} "
+                f"--last {stop} "
+                f"--umask {get_umask()} ",
+                jobname="OSmOSE_SpectroGenerator",
+                preset="low",
+                env_name=sys.executable.replace("/bin/python", ""),
+                mem="32G",
+                walltime="01:00:00",
+                logdir=self.folder / "log",
+            )
+        self.job_builder.submit_job()
 
     def _sort_dataset(self, dataset: type[DatasetChild]) -> None:
         if type(dataset) is AudioDataset:
