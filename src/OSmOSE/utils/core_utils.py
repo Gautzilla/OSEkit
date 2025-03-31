@@ -881,7 +881,8 @@ def get_umask() -> int:
 
 
 def file_indexes_per_batch(
-    total_nb_files: int, nb_batches: int
+    total_nb_files: int,
+    nb_batches: int,
 ) -> list[tuple[int, int]]:
     """Compute the start and stop file indexes for each batch.
 
@@ -909,10 +910,14 @@ def file_indexes_per_batch(
     [(0, 145), (145, 290), (290, 435), (435, 580), (580, 725), (725, 870), (870, 1015), (1015, 1160), (1160, 1304), (1304, 1448)]
 
     """
-    batch_lengths = nb_files_per_batch(total_nb_files, nb_batches)
+    batch_lengths = [
+        length
+        for length in nb_files_per_batch(total_nb_files, nb_batches)
+        if length > 0
+    ]
     return [
         (sum(batch_lengths[:b]), sum(batch_lengths[:b]) + batch_lengths[b])
-        for b in range(nb_batches)
+        for b in range(len(batch_lengths))
     ]
 
 
