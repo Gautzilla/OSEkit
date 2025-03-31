@@ -20,7 +20,10 @@ from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.job import Job_builder
 from OSmOSE.public_api import export_audio
-from OSmOSE.utils.core_utils import get_umask
+from OSmOSE.utils.core_utils import (
+    file_indexes_per_batch,
+    get_umask,
+)
 from OSmOSE.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
@@ -266,7 +269,23 @@ class Dataset:
         link: bool = False,
         subtype: str | None = None,
     ) -> None:
+        """Export audio files to disk.
 
+        The tasks will be distributed to jobs if self.job_builder
+        is not None.
+
+        Parameters
+        ----------
+        ads: AudioDataset
+            The AudioDataset of which the data should be written.
+        folder: Path
+            The folder in which the files should be written.
+        link: bool
+            If set to True, the ads data will be linked to the exported files.
+        subtype: str | None
+            The subtype of the audio files as provided by the soundfile module.
+
+        """
         if self.job_builder is None:
             ads.write(folder, link=link, subtype=subtype)
             return
@@ -274,10 +293,12 @@ class Dataset:
         ads_json_path = f"{folder/ads.name}.json"
         ads.write_json(folder)
 
-        batch_size = len(ads.data) // self.job_builder.nb_jobs
+        batch_indexes = file_indexes_per_batch(
+            total_nb_files=len(ads.data),
+            nb_batches=self.job_builder.nb_jobs,
+        )
 
-        for batch in range(0, len(ads.data), batch_size):
-            start, stop = (batch, batch + batch_size)
+        for start, stop in batch_indexes:
             self.job_builder.build_job_file(
                 script_path=export_audio.__file__,
                 script_args=f"--dataset-json-path {ads_json_path} "
