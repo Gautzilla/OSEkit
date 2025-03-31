@@ -9,6 +9,7 @@ It has additionnal metadata that can be exported, e.g. to APLOSE.
 from __future__ import annotations
 
 import shutil
+import sys
 from enum import Flag, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
@@ -17,6 +18,9 @@ from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
+from OSmOSE.job import Job_builder
+from OSmOSE.public_api import export_audio
+from OSmOSE.utils.core_utils import get_umask
 from OSmOSE.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
@@ -78,6 +82,7 @@ class Dataset:
         depth: str | int = 0,
         timezone: str | None = None,
         datasets: dict | None = None,
+        job_builder: Job_builder | None = None,
     ) -> None:
         """Initialize a Dataset."""
         self.folder = folder
@@ -86,6 +91,7 @@ class Dataset:
         self.depth = depth
         self.timezone = timezone
         self.datasets = datasets if datasets is not None else {}
+        self.job_builder = job_builder
 
     @property
     def origin_files(self) -> set[AudioFile]:
@@ -231,7 +237,7 @@ class Dataset:
         subtype: str | None = None,
     ) -> None:
         ads_folder = self._get_audio_dataset_subpath(ads=ads)
-        ads.write(ads_folder, link=True, subtype=subtype)
+        self.export_audio(ads, ads_folder, link=True, subtype=subtype)
 
         self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
 
@@ -252,6 +258,42 @@ class Dataset:
                 else ads.name
             )
         )
+
+    def export_audio(
+        self,
+        ads: AudioDataset,
+        folder: Path,
+        link: bool = False,
+        subtype: str | None = None,
+    ) -> None:
+
+        if self.job_builder is None:
+            ads.write(folder, link=link, subtype=subtype)
+            return
+
+        ads_json_path = f"{folder/ads.name}.json"
+        ads.write_json(folder)
+
+        batch_size = len(ads.data) // self.job_builder.nb_jobs
+
+        for batch in range(0, len(ads.data), batch_size):
+            start, stop = (batch, batch + batch_size)
+            self.job_builder.build_job_file(
+                script_path=export_audio.__file__,
+                script_args=f"--dataset-json-path {ads_json_path} "
+                f"--output-folder {folder} "
+                f"--first {start} "
+                f"--last {stop} "
+                f"--subtype {subtype} "
+                f"--umask {get_umask()} ",
+                jobname="OSmOSE_SegmentGenerator",
+                preset="low",
+                env_name=sys.executable.replace("/bin/python", ""),
+                mem="32G",
+                walltime="01:00:00",
+                logdir=self.folder / "log",
+            )
+        self.job_builder.submit_job()
 
     def _add_spectro_dataset(
         self,
