@@ -1099,7 +1099,7 @@ def test_write_files(
     )
     output_path = tmp_path / "output"
     dataset.write(output_path, subtype=subtype, link=link)
-git add    for data in dataset.data:
+    for data in dataset.data:
         assert f"{data}.wav" in [f.name for f in output_path.glob("*.wav")]
         assert np.allclose(data.get_value(), sf.read(output_path / f"{data}.wav")[0])
 

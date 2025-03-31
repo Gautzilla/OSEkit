@@ -70,7 +70,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         subtype: str | None = None,
         link: bool = False,  # noqa: FBT001, FBT002,
         first: int = 0,
-        last: int = -1,
+        last: int | None = None,
     ) -> None:
         """Write all data objects in the specified folder.
 
@@ -87,11 +87,12 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             new AudioFile.
         first: int
             Index of the first AudioData object to write.
-        last: int
+        last: int | None
             Index after the last AudioData object to write.
 
 
         """
+        last = len(self.data) if last is None else last
         for data in self.data[first:last]:
             data.write(folder=folder, subtype=subtype, link=link)
 
