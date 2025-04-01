@@ -39,6 +39,8 @@ class BaseDataset(Generic[TData, TFile], Event):
         self.data = data
         self._name = name
         self._has_default_name = name is None
+        self._suffix = ""
+        self._folder = None
 
     def __str__(self) -> str:
         """Overwrite __str__."""
@@ -54,15 +56,30 @@ class BaseDataset(Generic[TData, TFile], Event):
     @property
     def name(self) -> str:
         """Name of the dataset."""
-        return (
+        base_name = (
             self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
             if self._name is None
             else self._name
         )
+        return base_name if not self.suffix else f"{base_name}_{self.suffix}"
 
     @name.setter
     def name(self, name: str | None) -> None:
         self._name = name
+
+    @property
+    def suffix(self) -> str:
+        """Suffix that is applied to the name of the ads.
+
+        This is used by the public API, for suffixing multiple core_api datasets
+        that are created simultaneously and share the same namewith their specific type,
+         e.g. _audio or _spectro.
+        """
+        return self._suffix
+
+    @suffix.setter
+    def suffix(self, suffix: str | None) -> None:
+        self._suffix = suffix
 
     @property
     def has_default_name(self) -> bool:
@@ -87,7 +104,7 @@ class BaseDataset(Generic[TData, TFile], Event):
     @property
     def folder(self) -> Path:
         """Folder in which the dataset files are located."""
-        return next(iter(file.path.parent for file in self.files), None)
+        return next(iter(file.path.parent for file in self.files), self._folder)
 
     @folder.setter
     def folder(self, folder: Path) -> None:
@@ -100,6 +117,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             It will be created if it does not exist.
 
         """
+        self._folder = folder
         for file in self.files:
             file.move(folder)
 

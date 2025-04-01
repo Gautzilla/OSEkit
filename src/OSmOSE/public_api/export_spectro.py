@@ -5,22 +5,12 @@ from pathlib import Path
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.public_api import Analysis
 
-"""
-        sds: SpectroDataset
-            The SpectroDataset of which the data should be written.
-        folder: Path
-            The folder in which the files should be written.
-        analysis:
-            Flags that should be use to specify the type of analysis to run.
-            See Dataset.Analysis docstring for more info.
-        link: bool
-            If set to True, the ads data will be linked to the exported files.
-            """
-
 
 def write_spectro_files(
     sds: SpectroDataset,
     analysis: Analysis,
+    matrix_folder: Path,
+    spectrogram_folder: Path,
     link: bool = False,
     first: int = 0,
     last: int | None = None,
@@ -34,6 +24,10 @@ def write_spectro_files(
     analysis: Analysis
         Flags that should be use to specify the type of analysis to run.
         See Dataset.Analysis docstring for more info.
+    matrix_folder: Path
+        The folder in which the matrix npz files should be written.
+    spectrogram_folder: Path
+        The folder in which the spectrogram png files should be written.
     link: bool
         If set to True, the ads data will be linked to the exported files.
     first: int
@@ -47,21 +41,21 @@ def write_spectro_files(
     """
     if Analysis.MATRIX in analysis and Analysis.SPECTROGRAM in analysis:
         sds.save_all(
-            matrix_folder=sds.folder / "welch",
-            spectrogram_folder=sds.folder / "spectrogram",
+            matrix_folder=matrix_folder,
+            spectrogram_folder=spectrogram_folder,
             link=link,
             first=first,
             last=last,
         )
     elif Analysis.SPECTROGRAM in analysis:
         sds.save_spectrogram(
-            folder=sds.folder / "spectrogram",
+            folder=spectrogram_folder,
             first=first,
             last=last,
         )
     elif Analysis.MATRIX in analysis:
         sds.write(
-            folder=sds.folder / "welch",
+            folder=matrix_folder,
             link=link,
             first=first,
             last=last,
@@ -87,10 +81,17 @@ if __name__ == "__main__":
         type=int,
     )
     required.add_argument(
-        "--output-folder",
-        "-o",
+        "--matrix-folder",
+        "-m",
         required=True,
-        help="The path to the folder in which the spectro files are written.",
+        help="The path to the folder in which the npz matrix files are written.",
+        type=str,
+    )
+    required.add_argument(
+        "--spectrogram-folder",
+        "-s",
+        required=True,
+        help="The path to the folder in which the png spectrogram files are written.",
         type=str,
     )
     required.add_argument(
@@ -127,7 +128,8 @@ if __name__ == "__main__":
     write_spectro_files(
         sds=sds,
         analysis=analysis,
-        link=args.link,
+        matrix_folder=Path(args.matrix_folder),
+        spectrogram_folder=Path(args.spectrogram_folder),
         first=args.first,
         last=args.last,
     )

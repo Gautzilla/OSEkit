@@ -191,12 +191,16 @@ class Dataset:
             ads.sample_rate = sample_rate
 
         if Analysis.AUDIO in analysis:
-            if is_spectro and name is not None:
-                ads.name = f"{ads.name}_audio"
+            if is_spectro:
+                ads.suffix = "audio"
             self._add_audio_dataset(ads=ads, subtype=subtype)
 
         if is_spectro:
-            sds = SpectroDataset.from_audio_dataset(audio_dataset=ads, fft=fft)
+            sds = SpectroDataset.from_audio_dataset(
+                audio_dataset=ads,
+                fft=fft,
+                name=name,
+            )
             self._add_spectro_dataset(sds=sds, analysis=analysis)
 
     def _add_audio_dataset(
@@ -286,11 +290,12 @@ class Dataset:
         sds: SpectroDataset,
         analysis: Analysis,
     ) -> None:
-        sds_folder = self._get_spectro_dataset_subpath(sds=sds)
+        sds.folder = self._get_spectro_dataset_subpath(sds=sds)
 
         self.export_spectro(
             sds=sds,
-            folder=sds_folder,
+            matrix_folder=sds.folder / "welch",
+            spectrogram_folder=sds.folder / "spectrogram",
             analysis=analysis,
             link=True,
         )
@@ -317,7 +322,8 @@ class Dataset:
     def export_spectro(
         self,
         sds: SpectroDataset,
-        folder: Path,
+        matrix_folder: Path,
+        spectrogram_folder: Path,
         analysis: Analysis,
         link: bool = False,
     ) -> None:
@@ -330,8 +336,10 @@ class Dataset:
         ----------
         sds: SpectroDataset
             The SpectroDataset of which the data should be written.
-        folder: Path
-            The folder in which the files should be written.
+        matrix_folder: Path
+            The folder in which the matrix npz files should be written.
+        spectrogram_folder: Path
+            The folder in which the spectrogram png files should be written.
         analysis:
             Flags that should be use to specify the type of analysis to run.
             See Dataset.Analysis docstring for more info.
@@ -343,12 +351,14 @@ class Dataset:
             write_spectro_files(
                 sds=sds,
                 analysis=analysis,
+                matrix_folder=matrix_folder,
+                spectrogram_folder=spectrogram_folder,
                 link=link,
             )
             return
 
-        sds_json_path = f"{folder/sds.name}.json"
-        sds.write_json(folder)
+        sds_json_path = sds.folder / f"{sds.name}.json"
+        sds.write_json(sds.folder)
 
         batch_indexes = file_indexes_per_batch(
             total_nb_files=len(sds.data),
@@ -359,8 +369,9 @@ class Dataset:
             self.job_builder.build_job_file(
                 script_path=export_spectro.__file__,
                 script_args=f"--dataset-json-path {sds_json_path} "
-                f"--analysis {sum(v.value for v in list(analysis))}"
-                f"--output-folder {folder} "
+                f"--analysis {sum(v.value for v in list(analysis))} "
+                f"--matrix-folder {matrix_folder} "
+                f"--spectrogram-folder {spectrogram_folder} "
                 f"--first {start} "
                 f"--last {stop} "
                 f"--umask {get_umask()} ",

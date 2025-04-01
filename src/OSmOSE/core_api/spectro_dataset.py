@@ -39,13 +39,6 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         self._folder = None
 
     @property
-    def name(self) -> str:
-        """Name of the dataset."""
-        if self.has_default_name:
-            return f"{super().name}_spectro"
-        return super().name
-
-    @property
     def fft(self) -> ShortTimeFFT:
         """Return the fft of the spectro data."""
         return next(data.fft for data in self.data)
@@ -76,7 +69,10 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             file.move(folder)
 
     def save_spectrogram(
-        self, folder: Path, first: int = 0, last: int | None = None
+        self,
+        folder: Path,
+        first: int = 0,
+        last: int | None = None,
     ) -> None:
         """Export all spectrogram data as png images in the specified folder.
 
