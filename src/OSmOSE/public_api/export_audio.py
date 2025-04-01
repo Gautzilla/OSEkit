@@ -65,3 +65,5 @@ if __name__ == "__main__":
         first=args.first,
         last=args.last,
     )
+
+    ads.write_json(ads.folder)

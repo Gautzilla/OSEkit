@@ -212,8 +212,6 @@ class Dataset:
         self.export_audio(ads, ads_folder, link=True, subtype=subtype)
 
         self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
-
-        ads.write_json(folder=ads.folder)
         self.write_json()
 
     def _get_audio_dataset_subpath(
@@ -257,6 +255,7 @@ class Dataset:
         """
         if self.job_builder is None:
             ads.write(folder, link=link, subtype=subtype)
+            ads.write_json(folder=ads.folder)
             return
 
         ads_json_path = f"{folder/ads.name}.json"
