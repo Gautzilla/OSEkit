@@ -127,6 +127,25 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             data.write(folder=matrix_folder, sx=sx, link=link)
             data.save_spectrogram(folder=spectrogram_folder, sx=sx)
 
+    def link_audio_dataset(self, audio_dataset: AudioDataset) -> None:
+        """Link the SpectroData of the SpectroDataset to the AudioData of the AudioDataset.
+
+        Parameters
+        ----------
+        audio_dataset: AudioDataset
+            The AudioDataset which data will be linked to the SpectroDataset data.
+
+        """
+        if len(audio_dataset.data) != len(self.data):
+            raise ValueError(
+                "The audio dataset doesn't contain the same number of data as the spectro dataset."
+            )
+        for sd, ad in zip(
+            sorted(self.data, key=lambda d: (d.begin, d.end)),
+            sorted(audio_dataset.data, key=lambda d: (d.begin, d.end)),
+        ):
+            sd.link_audio_data(ad)
+
     def to_dict(self) -> dict:
         """Serialize a SpectroDataset to a dictionary.
 

@@ -13,7 +13,10 @@ import numpy as np
 import soundfile as sf
 from pandas import Timedelta, Timestamp
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+)
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.audio_item import AudioItem
 from OSmOSE.core_api.base_data import BaseData
@@ -71,7 +74,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
     def __str__(self) -> str:
         """Overwrite __str__."""
-        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ)
 
     def __eq__(self, other: AudioData) -> bool:
         """Override __eq__."""

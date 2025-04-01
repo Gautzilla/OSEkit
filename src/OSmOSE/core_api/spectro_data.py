@@ -12,7 +12,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import ShortTimeFFT
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+)
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.base_data import BaseData
 from OSmOSE.core_api.spectro_file import SpectroFile
@@ -132,7 +135,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
     def __str__(self) -> str:
         """Overwrite __str__."""
-        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ)
 
     def get_value(self) -> np.ndarray:
         """Return the Sx matrix of the spectrogram.
@@ -261,6 +264,23 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
         )
         self.items = SpectroData.from_files([file]).items
+
+    def link_audio_data(self, audio_data: AudioData) -> None:
+        """Link the SpectroData to a given AudioData.
+
+        Parameters
+        ----------
+        audio_data: AudioData
+            The AudioData to which this SpectroData will be linked.
+
+        """
+        if self.begin != audio_data.begin:
+            raise ValueError("The begin of the audio data doesn't match.")
+        if self.end != audio_data.end:
+            raise ValueError("The begin of the audio data doesn't match.")
+        if self.fft.fs != audio_data.sample_rate:
+            raise ValueError("The sample rate of the audio data doesn't match.")
+        self.audio_data = audio_data
 
     def split(self, nb_subdata: int = 2) -> list[SpectroData]:
         """Split the spectro data object in the specified number of spectro subdata.
