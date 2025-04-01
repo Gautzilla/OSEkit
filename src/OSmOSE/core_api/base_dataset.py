@@ -34,13 +34,15 @@ class BaseDataset(Generic[TData, TFile], Event):
     that simplify repeated operations on the data.
     """
 
-    def __init__(self, data: list[TData], name: str | None = None) -> None:
+    def __init__(
+        self, data: list[TData], name: str | None = None, folder: Path | None = None
+    ) -> None:
         """Instantiate a Dataset object from the Data objects."""
         self.data = data
         self._name = name
         self._has_default_name = name is None
         self._suffix = ""
-        self._folder = None
+        self._folder = folder
 
     def __str__(self) -> str:
         """Overwrite __str__."""
@@ -165,7 +167,11 @@ class BaseDataset(Generic[TData, TFile], Event):
             The serialized dictionary representing the BaseDataset.
 
         """
-        return {"data": {str(d): d.to_dict() for d in self.data}, "name": self._name}
+        return {
+            "data": {str(d): d.to_dict() for d in self.data},
+            "name": self._name,
+            "folder": str(self.folder),
+        }
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> BaseDataset:
@@ -185,6 +191,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         return cls(
             [BaseData.from_dict(d) for d in dictionary["data"].values()],
             name=dictionary["name"],
+            folder=Path(dictionary["folder"]),
         )
 
     def write_json(self, folder: Path) -> None:

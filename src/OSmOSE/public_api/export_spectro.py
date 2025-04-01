@@ -11,7 +11,7 @@ def write_spectro_files(
     analysis: Analysis,
     matrix_folder: Path,
     spectrogram_folder: Path,
-    link: bool = False,
+    link: bool = True,
     first: int = 0,
     last: int | None = None,
 ) -> None:
@@ -132,4 +132,7 @@ if __name__ == "__main__":
         spectrogram_folder=Path(args.spectrogram_folder),
         first=args.first,
         last=args.last,
+        link=True,
     )
+
+    sds.write_json(sds.folder)

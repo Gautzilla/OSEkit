@@ -301,8 +301,6 @@ class Dataset:
         )
 
         self.datasets[sds.name] = {"class": type(sds).__name__, "dataset": sds}
-
-        sds.write_json(folder=sds.folder)
         self.write_json()
 
     def _get_spectro_dataset_subpath(
@@ -325,7 +323,7 @@ class Dataset:
         matrix_folder: Path,
         spectrogram_folder: Path,
         analysis: Analysis,
-        link: bool = False,
+        link: bool = True,
     ) -> None:
         """Export spectro files to disk.
 
@@ -355,6 +353,7 @@ class Dataset:
                 spectrogram_folder=spectrogram_folder,
                 link=link,
             )
+            sds.write_json(folder=sds.folder)
             return
 
         sds_json_path = sds.folder / f"{sds.name}.json"

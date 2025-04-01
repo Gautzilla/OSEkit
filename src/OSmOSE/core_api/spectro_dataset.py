@@ -6,6 +6,7 @@ that simplify repeated operations on the spectro data.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
@@ -17,7 +18,6 @@ from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_file import SpectroFile
 
 if TYPE_CHECKING:
-    from pathlib import Path
 
     import pytz
     from pandas import Timedelta, Timestamp
@@ -33,10 +33,14 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     """
 
-    def __init__(self, data: list[SpectroData], name: str | None = None) -> None:
+    def __init__(
+        self,
+        data: list[SpectroData],
+        name: str | None = None,
+        folder: Path | None = None,
+    ) -> None:
         """Initialize a SpectroDataset."""
-        super().__init__(data, name)
-        self._folder = None
+        super().__init__(data=data, name=name, folder=folder)
 
     @property
     def fft(self) -> ShortTimeFFT:
@@ -156,7 +160,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
                 continue
             sft["spectro_data"].append(str(data))
         spectro_data_dict = {str(d): d.to_dict(embed_sft=False) for d in self.data}
-        return {"data": spectro_data_dict} | {"sft": sft_dict} | {"name": self._name}
+        return {
+            "data": spectro_data_dict,
+            "sft": sft_dict,
+            "name": self._name,
+            "folder": str(self.folder),
+        }
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> SpectroDataset:
@@ -192,7 +201,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             )
             for name, params in dictionary["data"].items()
         ]
-        return cls(data=sd, name=dictionary["name"])
+        return cls(data=sd, name=dictionary["name"], folder=Path(dictionary["folder"]))
 
     @classmethod
     def from_folder(  # noqa: PLR0913
