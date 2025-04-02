@@ -35,7 +35,10 @@ class BaseDataset(Generic[TData, TFile], Event):
     """
 
     def __init__(
-        self, data: list[TData], name: str | None = None, folder: Path | None = None
+        self,
+        data: list[TData],
+        name: str | None = None,
+        folder: Path | None = None,
     ) -> None:
         """Instantiate a Dataset object from the Data objects."""
         self.data = data
@@ -105,8 +108,12 @@ class BaseDataset(Generic[TData, TFile], Event):
 
     @property
     def folder(self) -> Path:
-        """Folder in which the dataset files are located."""
-        return next(iter(file.path.parent for file in self.files), self._folder)
+        """Folder in which the dataset files are located or to be written."""
+        return (
+            self._folder
+            if self._folder is not None
+            else next(iter(file.path.parent for file in self.files), None)
+        )
 
     @folder.setter
     def folder(self, folder: Path) -> None:
@@ -120,8 +127,19 @@ class BaseDataset(Generic[TData, TFile], Event):
 
         """
         self._folder = folder
+
+    def move_files(self, folder: Path) -> None:
+        """Move the dataset files to the destination folder.
+
+        Parameters
+        ----------
+        folder: Path
+            Destination folder in which the dataset files will be moved.
+
+        """
         for file in self.files:
             file.move(folder)
+        self._folder = folder
 
     @property
     def data_duration(self) -> Timedelta:

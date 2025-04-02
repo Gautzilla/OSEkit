@@ -103,7 +103,7 @@ class Dataset:
         WARNING: all other files and folders will be deleted.
         """
         files_to_remove = list(self.folder.iterdir())
-        self.get_dataset("original").folder = self.folder
+        self.get_dataset("original").move_files(self.folder)
 
         if self.folder / "other" in files_to_remove:
             move_tree(self.folder / "other", self.folder)
@@ -391,7 +391,7 @@ class Dataset:
             return
 
     def _sort_audio_dataset(self, dataset: AudioDataset) -> None:
-        dataset.folder = self._get_audio_dataset_subpath(dataset)
+        dataset.move_files(self._get_audio_dataset_subpath(dataset))
 
     def _sort_spectro_dataset(self, dataset: SpectroDataset) -> None:
         raise NotImplementedError
