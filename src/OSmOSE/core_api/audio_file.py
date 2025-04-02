@@ -115,6 +115,14 @@ class AudioFile(BaseFile):
         """Return an AudioFile object from a BaseFile object."""
         return cls(path=file.path, begin=file.begin)
 
-    def move(self, destination_folder: Path):
+    def move(self, folder: Path) -> None:
+        """Move the file to the target folder.
+
+        Parameters
+        ----------
+        folder: Path
+            destination folder where the file will be moved.
+
+        """
         afm.close()
-        super().move(destination_folder)
+        super().move(folder)

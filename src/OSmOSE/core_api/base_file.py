@@ -133,8 +133,16 @@ class BaseFile(Event):
         """Override __eq__."""
         return self.path == other.path and super().__eq__(other)
 
-    def move(self, destination_folder: Path):
-        destination_path = destination_folder / self.path.name
-        destination_folder.mkdir(exist_ok=True, parents=True)
+    def move(self, folder: Path) -> None:
+        """Move the file to the target folder.
+
+        Parameters
+        ----------
+        folder: Path
+            destination folder where the file will be moved.
+
+        """
+        destination_path = folder / self.path.name
+        folder.mkdir(exist_ok=True, parents=True)
         self.path.rename(destination_path)
         self.path = destination_path
