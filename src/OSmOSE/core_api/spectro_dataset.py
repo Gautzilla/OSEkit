@@ -37,10 +37,11 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         self,
         data: list[SpectroData],
         name: str | None = None,
+        suffix: str = "",
         folder: Path | None = None,
     ) -> None:
         """Initialize a SpectroDataset."""
-        super().__init__(data=data, name=name, folder=folder)
+        super().__init__(data=data, name=name, suffix=suffix, folder=folder)
 
     @property
     def fft(self) -> ShortTimeFFT:
@@ -128,7 +129,10 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             data.save_spectrogram(folder=spectrogram_folder, sx=sx)
 
     def link_audio_dataset(
-        self, audio_dataset: AudioDataset, first: int = 0, last: int | None = None
+        self,
+        audio_dataset: AudioDataset,
+        first: int = 0,
+        last: int | None = None,
     ) -> None:
         """Link the SpectroData of the SpectroDataset to the AudioData of the AudioDataset.
 
@@ -149,7 +153,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             zip(
                 sorted(self.data, key=lambda d: (d.begin, d.end)),
                 sorted(audio_dataset.data, key=lambda d: (d.begin, d.end)),
-            )
+            ),
         )[first:last]:
             sd.link_audio_data(ad)
 
@@ -190,6 +194,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             "data": spectro_data_dict,
             "sft": sft_dict,
             "name": self._name,
+            "suffix": self.suffix,
             "folder": str(self.folder),
         }
 
@@ -227,7 +232,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             )
             for name, params in dictionary["data"].items()
         ]
-        return cls(data=sd, name=dictionary["name"], folder=Path(dictionary["folder"]))
+        return cls(
+            data=sd,
+            name=dictionary["name"],
+            suffix=dictionary["suffix"],
+            folder=Path(dictionary["folder"]),
+        )
 
     @classmethod
     def from_folder(  # noqa: PLR0913

@@ -38,13 +38,14 @@ class BaseDataset(Generic[TData, TFile], Event):
         self,
         data: list[TData],
         name: str | None = None,
+        suffix: str = "",
         folder: Path | None = None,
     ) -> None:
         """Instantiate a Dataset object from the Data objects."""
         self.data = data
         self._name = name
         self._has_default_name = name is None
-        self._suffix = ""
+        self._suffix = suffix
         self._folder = folder
 
     def __str__(self) -> str:
@@ -188,6 +189,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         return {
             "data": {str(d): d.to_dict() for d in self.data},
             "name": self._name,
+            "suffix": self.suffix,
             "folder": str(self.folder),
         }
 
@@ -209,6 +211,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         return cls(
             [BaseData.from_dict(d) for d in dictionary["data"].values()],
             name=dictionary["name"],
+            suffix=dictionary["suffix"],
             folder=Path(dictionary["folder"]),
         )
 

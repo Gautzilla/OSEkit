@@ -30,7 +30,11 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
     """
 
     def __init__(
-        self, data: list[AudioData], name: str | None = None, folder: Path | None = None
+        self,
+        data: list[AudioData],
+        name: str | None = None,
+        suffix: str = "",
+        folder: Path | None = None,
     ) -> None:
         """Initialize an AudioDataset."""
         if (
@@ -45,7 +49,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         else:
             for empty_data in (data for data in data if data.sample_rate is None):
                 empty_data.sample_rate = min(sample_rates)
-        super().__init__(data=data, name=name, folder=folder)
+        super().__init__(data=data, name=name, suffix=suffix, folder=folder)
 
     @property
     def sample_rate(self) -> set[float] | float:
@@ -108,6 +112,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         return cls(
             [AudioData.from_dict(d) for d in dictionary["data"].values()],
             name=dictionary["name"],
+            suffix=dictionary["suffix"],
             folder=Path(dictionary["folder"]),
         )
 
