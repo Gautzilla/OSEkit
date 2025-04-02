@@ -405,7 +405,7 @@ def test_reshape(
 
     dataset = Dataset(folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
     dataset.build()
-    dataset.create_analysis(
+    dataset.run_analysis(
         analysis=Analysis.AUDIO,
         begin=begin,
         end=end,

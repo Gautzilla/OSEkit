@@ -115,7 +115,7 @@ class Dataset:
 
         self.datasets = {}
 
-    def create_analysis(  # noqa: PLR0913
+    def run_analysis(  # noqa: PLR0913
         self,
         analysis: Analysis,
         begin: Timestamp | None = None,
