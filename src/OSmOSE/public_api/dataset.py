@@ -17,7 +17,6 @@ from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
-from OSmOSE.job import Job_builder
 from OSmOSE.public_api import Analysis
 from OSmOSE.utils.core_utils import (
     file_indexes_per_batch,
@@ -30,6 +29,7 @@ if TYPE_CHECKING:
     from scipy.signal import ShortTimeFFT
 
     from OSmOSE.core_api.audio_file import AudioFile
+    from OSmOSE.job import Job_builder
 
 
 class Dataset:
@@ -163,10 +163,10 @@ class Dataset:
             This parameter has no effect if Analysis.AUDIO is not in analysis.
         fft: ShortTimeFFT | None
             FFT to use for computing the spectra.
-            This parameter is mandatory if either Analysis.MATRIX or Analysis.SPECTROGRAM
-            is in analysis.
-            This parameter has no effect if neither Analysis.MATRIX nor Analysis.SPECTROGRAM
-            is in the analysis.
+            This parameter is mandatory if either Analysis.MATRIX
+            or Analysis.SPECTROGRAM is in analysis.
+            This parameter has no effect if neither Analysis.MATRIX
+            nor Analysis.SPECTROGRAM is in the analysis.
 
         """
         is_spectro = any(
@@ -246,17 +246,31 @@ class Dataset:
         matrix_folder_name: str = "welches",
         spectrogram_folder_name: str = "spectrogram",
     ) -> None:
-        """Export audio files to disk.
+        """Perform an analysis and write the results on disk.
 
+        An analysis is defined as a manipulation of the original audio files:
+        reshaping the audio, exporting spectrograms or npz matrices (or a mix of
+        those three) are examples of analyses.
         The tasks will be distributed to jobs if self.job_builder
-        is not None.
+        is not None, else it will be distributed on self.job_builder.nb_jobs jobs.
 
         Parameters
         ----------
+        spectrogram_folder_name
+            The name of the folder in which the png spectrograms will be
+            exported (relative to sds.folder)
+        matrix_folder_name:
+            The name of the folder in which the npz matrices will be
+            exported (relative to sds.folder)
+        sds: SpectroDataset
+            The SpectroDataset on which the data should be written.
+        analysis : Analysis
+            Analysis to be performed.
+            AudioDataset and SpectroDataset instances will be
+            created depending on the flags.
+            See OSmOSE.public_api.dataset.Analysis docstring for more information.
         ads: AudioDataset
-            The AudioDataset of which the data should be written.
-        folder: Path
-            The folder in which the files should be written.
+            The AudioDataset on which the data should be written.
         link: bool
             If set to True, the ads data will be linked to the exported files.
         subtype: str | None
