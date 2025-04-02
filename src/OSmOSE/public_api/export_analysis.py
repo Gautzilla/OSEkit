@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import argparse
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from OSmOSE.core_api.audio_dataset import AudioDataset
-from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.public_api import Analysis
 from OSmOSE.public_api.dataset import Dataset
+
+if TYPE_CHECKING:
+    from OSmOSE.core_api.audio_dataset import AudioDataset
+    from OSmOSE.core_api.spectro_dataset import SpectroDataset
 
 
 def write_analysis(
@@ -23,14 +28,20 @@ def write_analysis(
 
     Parameters
     ----------
-    sds: SpectroDataset
-        The SpectroDataset of which the data should be written.
     analysis: Analysis
         Flags that should be use to specify the type of analysis to run.
         See Dataset.Analysis docstring for more info.
-    matrix_folder: Path
+    subtype: str | None
+        Subtype of the written audio files as provided by the soundfile module.
+        Defaulted as the default 16-bit PCM for WAV audio files.
+        This parameter has no effect if Analysis.AUDIO is not in analysis.
+    ads: AudioDataset
+        The AudioDataset of which the data should be written.
+    sds: SpectroDataset
+        The SpectroDataset of which the data should be written.
+    matrix_folder_name: Path
         The folder in which the matrix npz files should be written.
-    spectrogram_folder: Path
+    spectrogram_folder_name: Path
         The folder in which the spectrogram png files should be written.
     link: bool
         If set to True, the ads data will be linked to the exported files.
@@ -38,9 +49,6 @@ def write_analysis(
         Index of the first data object to write.
     last: int|None
         Index after the last data object to write.
-
-    Returns
-    -------
 
     """
     if Analysis.AUDIO in analysis:
