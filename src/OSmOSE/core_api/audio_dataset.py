@@ -7,6 +7,7 @@ that simplify repeated operations on the audio data.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 from OSmOSE.core_api.audio_data import AudioData
@@ -15,8 +16,6 @@ from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json
 
 if TYPE_CHECKING:
-
-    from pathlib import Path
 
     import pytz
     from pandas import Timedelta, Timestamp
@@ -30,7 +29,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     """
 
-    def __init__(self, data: list[AudioData], name: str | None = None) -> None:
+    def __init__(
+        self, data: list[AudioData], name: str | None = None, folder: Path | None = None
+    ) -> None:
         """Initialize an AudioDataset."""
         if (
             len(
@@ -44,7 +45,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         else:
             for empty_data in (data for data in data if data.sample_rate is None):
                 empty_data.sample_rate = min(sample_rates)
-        super().__init__(data, name)
+        super().__init__(data=data, name=name, folder=folder)
 
     @property
     def sample_rate(self) -> set[float] | float:
@@ -107,6 +108,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         return cls(
             [AudioData.from_dict(d) for d in dictionary["data"].values()],
             name=dictionary["name"],
+            folder=Path(dictionary["folder"]),
         )
 
     @classmethod

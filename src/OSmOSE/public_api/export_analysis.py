@@ -2,15 +2,19 @@ import argparse
 import os
 from pathlib import Path
 
+from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.public_api import Analysis
+from OSmOSE.public_api.dataset import Dataset
 
 
-def write_spectro_files(
-    sds: SpectroDataset,
+def write_analysis(
     analysis: Analysis,
-    matrix_folder: Path,
-    spectrogram_folder: Path,
+    ads: AudioDataset,
+    sds: SpectroDataset,
+    subtype: str,
+    matrix_folder_name: str,
+    spectrogram_folder_name: str,
     link: bool = True,
     first: int = 0,
     last: int | None = None,
@@ -39,27 +43,46 @@ def write_spectro_files(
     -------
 
     """
+    if Analysis.AUDIO in analysis:
+        ads.write(
+            folder=ads.folder,
+            subtype=subtype,
+            link=link,
+            first=first,
+            last=last,
+        )
+        ads.write_json(ads.folder)
+
+    if Analysis.MATRIX not in analysis and Analysis.SPECTROGRAM not in analysis:
+        return
+
+    # Avoid re-computing the reshaped audio
+    if Analysis.AUDIO in analysis:
+        sds.link_audio_dataset(ads, first=first, last=last)
+
     if Analysis.MATRIX in analysis and Analysis.SPECTROGRAM in analysis:
         sds.save_all(
-            matrix_folder=matrix_folder,
-            spectrogram_folder=spectrogram_folder,
+            matrix_folder=sds.folder / matrix_folder_name,
+            spectrogram_folder=sds.folder / spectrogram_folder_name,
             link=link,
             first=first,
             last=last,
         )
     elif Analysis.SPECTROGRAM in analysis:
         sds.save_spectrogram(
-            folder=spectrogram_folder,
+            folder=sds.folder / spectrogram_folder_name,
             first=first,
             last=last,
         )
     elif Analysis.MATRIX in analysis:
         sds.write(
-            folder=matrix_folder,
+            folder=sds.folder / matrix_folder_name,
             link=link,
             first=first,
             last=last,
         )
+
+    sds.write_json(sds.folder)
 
 
 if __name__ == "__main__":
@@ -70,7 +93,7 @@ if __name__ == "__main__":
         "--dataset-json-path",
         "-p",
         required=True,
-        help="The path to the SpectroDataset JSON file.",
+        help="The path to the Dataset JSON file.",
         type=str,
     )
     required.add_argument(
@@ -81,17 +104,39 @@ if __name__ == "__main__":
         type=int,
     )
     required.add_argument(
-        "--matrix-folder",
-        "-m",
+        "--ads-name",
+        "-ads",
         required=True,
-        help="The path to the folder in which the npz matrix files are written.",
+        help="Name of the AudioDataset to export during this analysis.",
         type=str,
     )
     required.add_argument(
-        "--spectrogram-folder",
-        "-s",
+        "--sds-name",
+        "-sds",
         required=True,
-        help="The path to the folder in which the png spectrogram files are written.",
+        help="Name of the SpectroDataset to export during this analysis.",
+        type=str,
+    )
+    parser.add_argument(
+        "--subtype",
+        "-sbtp",
+        required=False,
+        help="The subtype format of the audio files to export.",
+        type=str,
+        default=None,
+    )
+    required.add_argument(
+        "--matrix-folder-name",
+        "-mfn",
+        required=True,
+        help="The name of the folder in which the npz matrix files are written.",
+        type=str,
+    )
+    required.add_argument(
+        "--spectrogram-folder-name",
+        "-sfn",
+        required=True,
+        help="The name of the folder in which the png spectrogram files are written.",
         type=str,
     )
     required.add_argument(
@@ -121,18 +166,24 @@ if __name__ == "__main__":
 
     os.umask(args.umask)
 
-    sds = SpectroDataset.from_json(Path(args.dataset_json_path))
+    dataset = Dataset.from_json(file=Path(args.dataset_json_path))
+
+    ads, sds = (
+        dataset.get_dataset(ds_name) if ds_name else None
+        for ds_name in (args.ads_name, args.sds_name)
+    )
+    subtype = None if args.subtype.lower() == "none" else args.subtype
 
     analysis = Analysis(args.analysis)
 
-    write_spectro_files(
-        sds=sds,
+    write_analysis(
         analysis=analysis,
-        matrix_folder=Path(args.matrix_folder),
-        spectrogram_folder=Path(args.spectrogram_folder),
+        ads=ads,
+        sds=sds,
+        subtype=subtype,
+        matrix_folder_name=args.matrix_folder_name,
+        spectrogram_folder_name=args.spectrogram_folder_name,
         first=args.first,
         last=args.last,
         link=True,
     )
-
-    sds.write_json(sds.folder)

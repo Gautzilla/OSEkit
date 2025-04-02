@@ -173,7 +173,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         file = AudioFile(
             path=folder / f"{self}.wav",
-            strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+            strptime_format=[
+                TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+                TIMESTAMP_FORMAT_EXPORTED_FILES,
+            ],
         )
         self.items = AudioData.from_files([file]).items
 

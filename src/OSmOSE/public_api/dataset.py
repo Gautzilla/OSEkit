@@ -18,8 +18,7 @@ from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.job import Job_builder
-from OSmOSE.public_api import Analysis, export_audio, export_spectro
-from OSmOSE.public_api.export_spectro import write_spectro_files
+from OSmOSE.public_api import Analysis
 from OSmOSE.utils.core_utils import (
     file_indexes_per_batch,
     get_umask,
@@ -193,26 +192,34 @@ class Dataset:
         if Analysis.AUDIO in analysis:
             if is_spectro:
                 ads.suffix = "audio"
-            self._add_audio_dataset(ads=ads, subtype=subtype)
+            self._add_audio_dataset(ads=ads)
 
+        sds = None
         if is_spectro:
             sds = SpectroDataset.from_audio_dataset(
                 audio_dataset=ads,
                 fft=fft,
                 name=name,
             )
-            self._add_spectro_dataset(sds=sds, analysis=analysis)
+            self._add_spectro_dataset(sds=sds)
+
+        self.export_analysis(
+            analysis=analysis,
+            ads=ads,
+            sds=sds,
+            link=True,
+            subtype=subtype,
+        )
+
+        self.write_json()
 
     def _add_audio_dataset(
         self,
         ads: AudioDataset,
-        subtype: str | None = None,
     ) -> None:
-        ads_folder = self._get_audio_dataset_subpath(ads=ads)
-        self.export_audio(ads, ads_folder, link=True, subtype=subtype)
-
+        ads.folder = self._get_audio_dataset_subpath(ads=ads)
         self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
-        self.write_json()
+        ads.write_json(ads.folder)
 
     def _get_audio_dataset_subpath(
         self,
@@ -229,12 +236,15 @@ class Dataset:
             )
         )
 
-    def export_audio(
+    def export_analysis(
         self,
-        ads: AudioDataset,
-        folder: Path,
+        analysis: Analysis,
+        ads: AudioDataset | None = None,
+        sds: SpectroDataset | None = None,
         link: bool = False,
         subtype: str | None = None,
+        matrix_folder_name: str = "welches",
+        spectrogram_folder_name: str = "spectrogram",
     ) -> None:
         """Export audio files to disk.
 
@@ -253,13 +263,20 @@ class Dataset:
             The subtype of the audio files as provided by the soundfile module.
 
         """
-        if self.job_builder is None:
-            ads.write(folder, link=link, subtype=subtype)
-            ads.write_json(folder=ads.folder)
-            return
+        # Import here to avoid circular imports since the script needs to import Dataset
+        from OSmOSE.public_api import export_analysis
 
-        ads_json_path = f"{folder/ads.name}.json"
-        ads.write_json(folder)
+        if self.job_builder is None:
+            export_analysis.write_analysis(
+                analysis=analysis,
+                ads=ads,
+                sds=sds,
+                link=link,
+                subtype=subtype,
+                matrix_folder_name=matrix_folder_name,
+                spectrogram_folder_name=spectrogram_folder_name,
+            )
+            return
 
         batch_indexes = file_indexes_per_batch(
             total_nb_files=len(ads.data),
@@ -268,14 +285,18 @@ class Dataset:
 
         for start, stop in batch_indexes:
             self.job_builder.build_job_file(
-                script_path=export_audio.__file__,
-                script_args=f"--dataset-json-path {ads_json_path} "
-                f"--output-folder {folder} "
+                script_path=export_analysis.__file__,
+                script_args=f"--dataset-json-path {self.folder / 'dataset.json'} "
+                f"--analysis {sum(v.value for v in list(analysis))} "
+                f"--ads-name {ads.name if ads is not None else ''} "
+                f"--sds-name {sds.name if sds is not None else ''} "
+                f"--subtype {subtype} "
+                f"--matrix-folder-name {matrix_folder_name} "
+                f"--spectrogram-folder-name {spectrogram_folder_name} "
                 f"--first {start} "
                 f"--last {stop} "
-                f"--subtype {subtype} "
                 f"--umask {get_umask()} ",
-                jobname="OSmOSE_SegmentGenerator",
+                jobname="OSmOSE_Analysis",
                 preset="low",
                 env_name=sys.executable.replace("/bin/python", ""),
                 mem="32G",
@@ -287,20 +308,10 @@ class Dataset:
     def _add_spectro_dataset(
         self,
         sds: SpectroDataset,
-        analysis: Analysis,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
-
-        self.export_spectro(
-            sds=sds,
-            matrix_folder=sds.folder / "welch",
-            spectrogram_folder=sds.folder / "spectrogram",
-            analysis=analysis,
-            link=True,
-        )
-
         self.datasets[sds.name] = {"class": type(sds).__name__, "dataset": sds}
-        self.write_json()
+        sds.write_json(sds.folder)
 
     def _get_spectro_dataset_subpath(
         self,
@@ -315,72 +326,6 @@ class Dataset:
             / "processed"
             / (ads_folder / fft_folder if sds.has_default_name is None else sds.name)
         )
-
-    def export_spectro(
-        self,
-        sds: SpectroDataset,
-        matrix_folder: Path,
-        spectrogram_folder: Path,
-        analysis: Analysis,
-        link: bool = True,
-    ) -> None:
-        """Export spectro files to disk.
-
-        The tasks will be distributed to jobs if self.job_builder
-        is not None.
-
-        Parameters
-        ----------
-        sds: SpectroDataset
-            The SpectroDataset of which the data should be written.
-        matrix_folder: Path
-            The folder in which the matrix npz files should be written.
-        spectrogram_folder: Path
-            The folder in which the spectrogram png files should be written.
-        analysis:
-            Flags that should be use to specify the type of analysis to run.
-            See Dataset.Analysis docstring for more info.
-        link: bool
-            If set to True, the ads data will be linked to the exported files.
-
-        """
-        if self.job_builder is None:
-            write_spectro_files(
-                sds=sds,
-                analysis=analysis,
-                matrix_folder=matrix_folder,
-                spectrogram_folder=spectrogram_folder,
-                link=link,
-            )
-            sds.write_json(folder=sds.folder)
-            return
-
-        sds_json_path = sds.folder / f"{sds.name}.json"
-        sds.write_json(sds.folder)
-
-        batch_indexes = file_indexes_per_batch(
-            total_nb_files=len(sds.data),
-            nb_batches=self.job_builder.nb_jobs,
-        )
-
-        for start, stop in batch_indexes:
-            self.job_builder.build_job_file(
-                script_path=export_spectro.__file__,
-                script_args=f"--dataset-json-path {sds_json_path} "
-                f"--analysis {sum(v.value for v in list(analysis))} "
-                f"--matrix-folder {matrix_folder} "
-                f"--spectrogram-folder {spectrogram_folder} "
-                f"--first {start} "
-                f"--last {stop} "
-                f"--umask {get_umask()} ",
-                jobname="OSmOSE_SpectroGenerator",
-                preset="low",
-                env_name=sys.executable.replace("/bin/python", ""),
-                mem="32G",
-                walltime="01:00:00",
-                logdir=self.folder / "log",
-            )
-        self.job_builder.submit_job()
 
     def _sort_dataset(self, dataset: type[DatasetChild]) -> None:
         if type(dataset) is AudioDataset:

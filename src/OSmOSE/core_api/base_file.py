@@ -38,7 +38,7 @@ class BaseFile(Event):
         path: PathLike | str,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
-        strptime_format: str | None = None,
+        strptime_format: str | list[str] | None = None,
         timezone: str | pytz.timezone | None = None,
     ) -> None:
         """Initialize a File object with a path and timestamps.

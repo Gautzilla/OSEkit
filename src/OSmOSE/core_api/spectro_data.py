@@ -261,7 +261,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         file = SpectroFile(
             path=folder / f"{self}.npz",
-            strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+            strptime_format=[
+                TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+                TIMESTAMP_FORMAT_EXPORTED_FILES,
+            ],
         )
         self.items = SpectroData.from_files([file]).items
 
