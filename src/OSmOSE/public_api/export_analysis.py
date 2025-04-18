@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import argparse
 import os
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from OSmOSE.config import resample_quality_settings
+from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.public_api import Analysis
 from OSmOSE.public_api.dataset import Dataset
 
 if TYPE_CHECKING:
     from OSmOSE.core_api.audio_dataset import AudioDataset
-    from OSmOSE.core_api.spectro_dataset import SpectroDataset
 
 
 def write_analysis(
@@ -91,7 +92,30 @@ def write_analysis(
             last=last,
         )
 
+    # Update the sds from the JSON in case it has already been modified in another job
+    _update_json(sds=sds, first=first, last=last)
+
+
+def _update_json(
+    sds: SpectroDataset, first: int, last: int, lockfile_name: str = "lock.lock"
+) -> None:
+
+    lock_file = sds.folder / lockfile_name
+
+    # Wait for the lock to be released
+    while lock_file.exists():
+        time.sleep(1)
+
+    # Create lock file
+    lock_file.touch()
+
+    sd_to_update = sds.data[first:last]
+    sds = SpectroDataset.from_json(sds.folder / f"{sds.name}.json")
+    sds.data[first:last] = sd_to_update
+
     sds.write_json(sds.folder)
+
+    lock_file.unlink()
 
 
 if __name__ == "__main__":
