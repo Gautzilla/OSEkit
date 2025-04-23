@@ -3,6 +3,7 @@
 It embeds the technical properties of the hydrophone,
 the gain applied to the measured signal etc.
 """
+
 from __future__ import annotations
 
 import numpy as np
