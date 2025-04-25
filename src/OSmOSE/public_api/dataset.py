@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, TypeVar
 from OSmOSE.config import resample_quality_settings
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
+from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.public_api import Analysis
@@ -51,6 +52,7 @@ class Dataset:
         timezone: str | None = None,
         datasets: dict | None = None,
         job_builder: Job_builder | None = None,
+        instrument: Instrument | None = None,
     ) -> None:
         """Initialize a Dataset."""
         self.folder = folder
@@ -60,6 +62,7 @@ class Dataset:
         self.timezone = timezone
         self.datasets = datasets if datasets is not None else {}
         self.job_builder = job_builder
+        self.instrument = instrument if instrument is not None else Instrument()
 
     @property
     def origin_files(self) -> set[AudioFile]:
@@ -85,6 +88,7 @@ class Dataset:
             timezone=self.timezone,
             name="original",
         )
+        ads.gain = self.instrument.end_to_end
         self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
         move_tree(
             self.folder,
@@ -189,6 +193,7 @@ class Dataset:
 
         if sample_rate is not None:
             ads.sample_rate = sample_rate
+        ads.gain = self.instrument.end_to_end
 
         if Analysis.AUDIO in analysis:
             if is_spectro:

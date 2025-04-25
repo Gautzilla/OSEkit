@@ -62,7 +62,7 @@ class Instrument:
     @property
     def end_to_end_db(self) -> float:
         """Total ratio between digital signal value and acoustic pressure level (re 1uPa)."""
-        return 20 * np.log10(self.end_to_end * self.P_REF)
+        return 20 * np.log10(self.end_to_end / self.P_REF)
 
     @end_to_end_db.setter
     def end_to_end_db(self, value: float) -> None:
@@ -123,3 +123,15 @@ class Instrument:
 
         """
         return digit_value * self.end_to_end
+
+    def to_dict(self) -> dict:
+        return {
+            "sensitivity": self.sensitivity,
+            "peak_voltage": self.peak_voltage,
+            "gain_db": self.gain_db,
+            "end_to_end_db": self.end_to_end_db,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Instrument:
+        return cls(**data)

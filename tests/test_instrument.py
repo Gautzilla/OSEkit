@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from OSmOSE.public_api.instrument import Instrument
+from OSmOSE.core_api.instrument import Instrument
 
 
 @pytest.mark.parametrize(
@@ -160,7 +160,7 @@ def test_db_conversion(natural: float, decibel: float) -> None:
     assert i.gain_db == decibel
 
     i.end_to_end = natural
-    assert i.end_to_end_db == 20 * np.log10(Instrument.P_REF) + decibel
+    assert i.end_to_end_db == decibel - 20 * np.log10(Instrument.P_REF)
 
     i.end_to_end_db = decibel
     assert i.end_to_end == Instrument.P_REF * natural

@@ -147,7 +147,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if not self.audio_data or not self.fft:
             raise ValueError("SpectroData should have either items or audio_data.")
 
-        sx = self.fft.stft(self.audio_data.get_value(reject_dc=True), padding="zeros")
+        sx = self.fft.stft(
+            self.audio_data.get_value_calibrated(reject_dc=True),
+            padding="zeros",
+        )
 
         if self.sx_dtype is float:
             sx = abs(sx) ** 2
@@ -169,14 +172,26 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ax = ax if ax is not None else SpectroData.get_default_ax()
         sx = self.get_value() if sx is None else sx
 
-        if self.sx_dtype is complex:
-            sx = abs(sx) ** 2
+        sx = self.to_db(sx)
 
-        sx = 10 * np.log10(sx + np.nextafter(0, 1))
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
 
-        ax.pcolormesh(time, freq, sx, vmin=-120, vmax=0)
+        ax.pcolormesh(time, freq, sx, vmin=0, vmax=100)
+
+    def to_db(self, sx: np.ndarray) -> np.ndarray:
+        if self.sx_dtype is complex:
+            sx = abs(sx) ** 2
+
+        # sx has already been squared up, hence the 10*log for sx and 20*log for pref
+        spl_offset = (
+            0
+            if self.audio_data is None
+            or (instrument := self.audio_data.instrument) is None
+            else -20 * np.log10(instrument.P_REF)
+        )
+
+        return 10 * np.log10(sx + np.nextafter(0, 1)) + spl_offset
 
     def save_spectrogram(
         self,

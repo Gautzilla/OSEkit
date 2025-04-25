@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Literal
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.base_dataset import BaseDataset
+from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.json_serializer import deserialize_json
 
 if TYPE_CHECKING:
@@ -35,6 +36,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         name: str | None = None,
         suffix: str = "",
         folder: Path | None = None,
+        instrument: Instrument | None = None,
     ) -> None:
         """Initialize an AudioDataset."""
         if (
@@ -49,11 +51,12 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         else:
             for empty_data in (data for data in data if data.sample_rate is None):
                 empty_data.sample_rate = min(sample_rates)
+        self.instrument = instrument
         super().__init__(data=data, name=name, suffix=suffix, folder=folder)
 
     @property
     def sample_rate(self) -> set[float] | float:
-        """Return the most frequent sample rate among sample rates of the data of this dataset of the audio data."""
+        """Return the most frequent sample rate among sample rates of the data of this dataset."""
         sample_rates = [data.sample_rate for data in self.data]
         return max(set(sample_rates), key=sample_rates.count)
 
@@ -61,6 +64,17 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
     def sample_rate(self, sample_rate: float) -> None:
         for data in self.data:
             data.sample_rate = sample_rate
+
+    @property
+    def instrument(self) -> Instrument | None:
+        """Instrument that might be used to obtain acoustic pressure from the wav audio data."""
+        return self._instrument
+
+    @instrument.setter
+    def instrument(self, instrument: Instrument | None) -> None:
+        self._instrument = instrument
+        for data in self.data:
+            data.instrument = instrument
 
     def write(
         self,
@@ -127,6 +141,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
         name: str | None = None,
+        instrument: Instrument | None = None,
         **kwargs: any,
     ) -> AudioDataset:
         """Return an AudioDataset from a folder containing the audio files.
@@ -161,6 +176,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             Else, one data object will cover the whole time period.
         name: str|None
             Name of the dataset.
+        instrument: Instrument | None
+            Instrument that might be used to obtain acoustic pressure from
+            the wav audio data.
         kwargs: any
             Keyword arguments passed to the BaseDataset.from_folder classmethod.
 
@@ -183,7 +201,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             data_duration=data_duration,
             **kwargs,
         )
-        return cls.from_base_dataset(base_dataset=base_dataset, name=name)
+        return cls.from_base_dataset(
+            base_dataset=base_dataset, name=name, instrument=instrument
+        )
 
     @classmethod
     def from_files(  # noqa: PLR0913
@@ -194,6 +214,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
         name: str | None = None,
+        instrument: Instrument | None = None,
     ) -> AudioDataset:
         """Return an AudioDataset object from a list of AudioFiles.
 
@@ -219,6 +240,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             Else, one data object will cover the whole time period.
         name: str|None
             Name of the dataset.
+        instrument: Instrument | None
+            Instrument that might be used to obtain acoustic pressure from
+            the wav audio data.
 
         Returns
         -------
@@ -233,7 +257,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             bound=bound,
             data_duration=data_duration,
         )
-        return cls.from_base_dataset(base, name=name)
+        return cls.from_base_dataset(base, name=name, instrument=instrument)
 
     @classmethod
     def from_base_dataset(
@@ -241,11 +265,13 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         base_dataset: BaseDataset,
         sample_rate: float | None = None,
         name: str | None = None,
+        instrument: Instrument | None = None,
     ) -> AudioDataset:
         """Return an AudioDataset object from a BaseDataset object."""
         return cls(
             [AudioData.from_base_data(data, sample_rate) for data in base_dataset.data],
             name=name,
+            instrument=instrument,
         )
 
     @classmethod
