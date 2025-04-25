@@ -133,6 +133,22 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         return data
 
     def get_value_calibrated(self, reject_dc: bool = False) -> np.ndarray:
+        """Return the value of the audio data accounting for the calibration factor.
+
+        If the instrument parameter of the audio data is not None, the returned value is
+        calibrated in units of Pa.
+
+        Parameters
+        ----------
+        reject_dc: bool
+            If True, the values will be centered on 0.
+
+        Returns
+        -------
+        np.ndarray:
+            The calibrated value of the audio data.
+
+        """
         raw_data = self.get_value(reject_dc=reject_dc)
         calibration_factor = (
             1.0 if self.instrument is None else self.instrument.end_to_end
@@ -174,7 +190,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """Link the AudioData to an AudioFile in the folder.
 
         The given folder should contain a file named "str(self).wav".
-        Linking is intended for AudioData objects that have already been written to disk.
+        Linking is intended for AudioData objects that have already been written.
         After linking, the AudioData will have a single item with the same
         properties of the target AudioFile.
 
@@ -271,7 +287,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         base_dict = super().to_dict()
         instrument_dict = {
-            "instrument": None if self.instrument is None else self.instrument.to_dict()
+            "instrument": (
+                None if self.instrument is None else self.instrument.to_dict()
+            ),
         }
         return (
             base_dict
@@ -303,7 +321,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             else Instrument.from_dict(dictionary["instrument"])
         )
         return cls.from_base_data(
-            data=base_data, sample_rate=dictionary["sample_rate"], instrument=instrument
+            data=base_data,
+            sample_rate=dictionary["sample_rate"],
+            instrument=instrument,
         )
 
     @classmethod

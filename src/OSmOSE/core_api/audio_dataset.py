@@ -13,13 +13,14 @@ from typing import TYPE_CHECKING, Literal
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.base_dataset import BaseDataset
-from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.json_serializer import deserialize_json
 
 if TYPE_CHECKING:
 
     import pytz
     from pandas import Timedelta, Timestamp
+
+    from OSmOSE.core_api.instrument import Instrument
 
 
 class AudioDataset(BaseDataset[AudioData, AudioFile]):
@@ -202,7 +203,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             **kwargs,
         )
         return cls.from_base_dataset(
-            base_dataset=base_dataset, name=name, instrument=instrument
+            base_dataset=base_dataset,
+            name=name,
+            instrument=instrument,
         )
 
     @classmethod

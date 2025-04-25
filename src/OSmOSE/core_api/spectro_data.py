@@ -180,6 +180,23 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ax.pcolormesh(time, freq, sx, vmin=0, vmax=100)
 
     def to_db(self, sx: np.ndarray) -> np.ndarray:
+        """Convert the sx values to dB.
+
+        If the linked audio data has an Instrument parameter, the values are
+        converted to dB SPL (re Instrument.P_REF).
+        Otherwise, the values are converted to dB FS.
+
+        Parameters
+        ----------
+        sx: np.ndarray
+            Sx values of the spectrum.
+
+        Returns
+        -------
+        np.ndarray
+            Converted Sx values.
+
+        """
         if self.sx_dtype is complex:
             sx = abs(sx) ** 2
 
