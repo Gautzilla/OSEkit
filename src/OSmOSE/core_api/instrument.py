@@ -125,6 +125,7 @@ class Instrument:
         return digit_value * self.end_to_end
 
     def to_dict(self) -> dict:
+        """Return a dictionary that is used for serialization."""
         return {
             "sensitivity": self.sensitivity,
             "peak_voltage": self.peak_voltage,
@@ -134,6 +135,7 @@ class Instrument:
 
     @classmethod
     def from_dict(cls, data: dict | None) -> Instrument | None:
+        """Deserialize an Instrument from a dictionary."""
         if data is None:
             return None
         return cls(**data)
