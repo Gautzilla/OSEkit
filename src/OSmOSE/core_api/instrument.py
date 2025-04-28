@@ -133,5 +133,7 @@ class Instrument:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> Instrument:
+    def from_dict(cls, data: dict | None) -> Instrument | None:
+        if data is None:
+            return None
         return cls(**data)

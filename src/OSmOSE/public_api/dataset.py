@@ -398,6 +398,9 @@ class Dataset:
                 }
                 for name, dataset in self.datasets.items()
             },
+            "instrument": (
+                None if self.instrument is None else self.instrument.to_dict()
+            ),
             "depth": self.depth,
             "folder": str(self.folder),
             "gps_coordinates": self.gps_coordinates,
@@ -437,6 +440,7 @@ class Dataset:
             }
         return cls(
             folder=Path(dictionary["folder"]),
+            instrument=Instrument.from_dict(dictionary["instrument"]),
             strptime_format=dictionary["strptime_format"],
             gps_coordinates=dictionary["gps_coordinates"],
             depth=dictionary["depth"],

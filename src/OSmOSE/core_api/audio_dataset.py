@@ -53,7 +53,13 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             for empty_data in (data for data in data if data.sample_rate is None):
                 empty_data.sample_rate = min(sample_rates)
         super().__init__(data=data, name=name, suffix=suffix, folder=folder)
-        self.instrument = instrument
+
+        if instrument is not None:
+            self.instrument = instrument
+        else:
+            self.instrument = next(
+                (d.instrument for d in data if d.instrument is not None), None
+            )
 
     @property
     def sample_rate(self) -> set[float] | float:
