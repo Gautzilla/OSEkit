@@ -140,7 +140,8 @@ def check_audio(
 def generate_sample_audio(
     nb_files: int,
     nb_samples: int,
-    series_type: Literal["repeat", "increase"] = "repeat",
+    series_type: Literal["repeat", "increase", "sine"] = "repeat",
+    sine_frequency: float = 1000.0,
     min_value: float = 0.0,
     max_value: float = 1.0,
     dtype: np.dtype = np.float64,
@@ -153,10 +154,14 @@ def generate_sample_audio(
         Number of audio data to generate.
     nb_samples: int
         Number of samples per audio data.
-    series_type: Literal["repeat", "increase"] (Optional)
+    series_type: Literal["repeat", "increase", "sine"] (Optional)
         "repeat": audio data contain the same linear values from min to max.
         "increase": audio data contain increasing values from min to max.
+        "sine": audio data contain sine waves with a peak value of max_value.
         Defaults to "repeat".
+    sine_frequency: float (Optional)
+        Frequency of the sine waves.
+        Has no effect if series_type is not "sine".
     min_value: float
         Minimum value of the audio data.
     max_value: float
@@ -183,6 +188,9 @@ def generate_sample_audio(
             np.linspace(min_value, max_value, nb_samples * nb_files, dtype=dtype),
             nb_files,
         )
+    if series_type == "sine":
+        t = np.linspace(0, 1, nb_samples)
+        return np.sin(2 * np.pi * sine_frequency * t, dtype=dtype) * max_value
     return np.split(np.empty(nb_samples * nb_files, dtype=dtype), nb_files)
 
 
