@@ -190,7 +190,13 @@ def generate_sample_audio(
         )
     if series_type == "sine":
         t = np.linspace(0, 1, nb_samples)
-        return np.sin(2 * np.pi * sine_frequency * t, dtype=dtype) * max_value
+        return np.split(
+            np.tile(
+                np.sin(2 * np.pi * sine_frequency * t, dtype=dtype) * max_value,
+                nb_files,
+            ),
+            nb_files,
+        )
     return np.split(np.empty(nb_samples * nb_files, dtype=dtype), nb_files)
 
 
