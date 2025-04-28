@@ -484,6 +484,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
                     "hop": self.fft.hop,
                     "fs": self.fft.fs,
                     "mfft": self.fft.mfft,
+                    "scale_to": self.fft.scaling,
                 }
                 if embed_sft
                 else None
