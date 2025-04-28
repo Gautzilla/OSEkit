@@ -62,7 +62,7 @@ class Dataset:
         self.timezone = timezone
         self.datasets = datasets if datasets is not None else {}
         self.job_builder = job_builder
-        self.instrument = instrument if instrument is not None else Instrument()
+        self.instrument = instrument
 
     @property
     def origin_files(self) -> set[AudioFile]:
@@ -87,8 +87,8 @@ class Dataset:
             bound="files",
             timezone=self.timezone,
             name="original",
+            instrument=self.instrument,
         )
-        ads.gain = self.instrument.end_to_end
         self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
         move_tree(
             self.folder,
@@ -189,11 +189,11 @@ class Dataset:
             end=end,
             data_duration=data_duration,
             name=name,
+            instrument=self.instrument,
         )
 
         if sample_rate is not None:
             ads.sample_rate = sample_rate
-        ads.gain = self.instrument.end_to_end
 
         if Analysis.AUDIO in analysis:
             if is_spectro:
@@ -404,14 +404,6 @@ class Dataset:
             "strptime_format": self.strptime_format,
             "timezone": self.timezone,
         }
-
-    """
-        folder: Path,
-        strptime_format: str,
-        gps_coordinates: str | list | tuple = (0, 0),
-        depth: str | int = 0,
-        timezone: str | None = None,
-    """
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> Dataset:
