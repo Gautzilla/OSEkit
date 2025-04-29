@@ -41,6 +41,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         fft: ShortTimeFFT | None = None,
+        db_ref: float | None = None,
     ) -> None:
         """Initialize a SpectroData from a list of SpectroItems.
 
@@ -64,6 +65,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self.audio_data = audio_data
         self.fft = fft
         self._sx_dtype = complex
+        self._db_ref = db_ref
 
     @staticmethod
     def get_default_ax() -> plt.Axes:
@@ -133,6 +135,26 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             raise ValueError("dtype must be complex or float.")
         self._sx_dtype = dtype
 
+    @property
+    def db_ref(self) -> float:
+        """Reference value for computing sx values in decibel.
+
+        If no reference is specified (self._db_ref is None), the
+        sx db values will be given in dB FS.
+        """
+        if self._db_ref is not None:
+            return self._db_ref
+        if (
+            self.audio_data is not None
+            and (instrument := self.audio_data.instrument) is not None
+        ):
+            return instrument.P_REF
+        return 1.0
+
+    @db_ref.setter
+    def db_ref(self, db_ref: float) -> None:
+        self._db_ref = db_ref
+
     def __str__(self) -> str:
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ)
@@ -200,15 +222,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if self.sx_dtype is complex:
             sx = abs(sx) ** 2
 
-        # sx has already been squared up, hence the 10*log for sx and 20*log for pref
-        spl_offset = (
-            0
-            if self.audio_data is None
-            or (instrument := self.audio_data.instrument) is None
-            else -20 * np.log10(instrument.P_REF)
-        )
-
-        return 10 * np.log10(sx + np.nextafter(0, 1)) + spl_offset
+        # sx has already been squared up, hence the 10*log for sx and 20*log for the ref
+        return 10 * np.log10(sx + np.nextafter(0, 1)) - 20 * np.log10(self.db_ref)
 
     def save_spectrogram(
         self,
@@ -262,6 +277,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         hop = [self.fft.hop]
         fs = [self.fft.fs]
         mfft = [self.fft.mfft]
+        db_ref = [self.db_ref]
         timestamps = (str(t) for t in (self.begin, self.end))
         np.savez(
             file=folder / f"{self}.npz",
@@ -272,6 +288,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             hop=hop,
             sx=sx,
             mfft=mfft,
+            db_ref=db_ref,
             timestamps="_".join(timestamps),
         )
         if link:
@@ -403,6 +420,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         instance = cls.from_base_data(
             BaseData.from_files(files, begin, end),
             fft=files[0].get_fft(),
+            db_ref=files[0].db_ref,
         )
         if not any(file.sx_dtype is complex for file in files):
             instance.sx_dtype = float
@@ -413,6 +431,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         cls,
         data: BaseData,
         fft: ShortTimeFFT,
+        db_ref: float | None = None,
     ) -> SpectroData:
         """Return an SpectroData object from a BaseData object.
 
@@ -429,7 +448,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The SpectroData object.
 
         """
-        return cls([SpectroItem.from_base_item(item) for item in data.items], fft=fft)
+        return cls(
+            [SpectroItem.from_base_item(item) for item in data.items],
+            fft=fft,
+            db_ref=db_ref,
+        )
 
     @classmethod
     def from_audio_data(cls, data: AudioData, fft: ShortTimeFFT) -> SpectroData:

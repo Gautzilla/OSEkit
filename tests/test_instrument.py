@@ -3,11 +3,12 @@ import pytest
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
-from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES, TIMESTAMP_FORMAT_TEST_FILES
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.spectro_data import SpectroData
+from OSmOSE.core_api.spectro_file import SpectroFile
 
 
 @pytest.mark.parametrize(
@@ -321,3 +322,23 @@ def test_instrument_level_spectrum(
     # peak value, in raw wav data ([-1.;1])
 
     assert abs(computed_level - expected_level) < level_tolerance
+
+    # Instrument calibration should be maintained when exporting/importing the sd
+
+    # To a npz file:
+    sd.write(tmp_path / "npz")
+    sd_npz = SpectroData.from_files(
+        [
+            SpectroFile(
+                next((tmp_path / "npz").glob("*.npz")),
+                strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+            ),
+        ],
+    )
+
+    equalized_sx_npz = sd_npz.to_db(sd_npz.get_value())
+    computed_level_npz = equalized_sx_npz[bin_idx, :].mean()
+
+    assert abs(computed_level_npz - expected_level) < level_tolerance
+
+    # With a linked exported audio file:
