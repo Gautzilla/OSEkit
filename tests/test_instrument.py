@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pytest
 from scipy.signal import ShortTimeFFT
@@ -342,3 +344,24 @@ def test_instrument_level_spectrum(
     assert abs(computed_level_npz - expected_level) < level_tolerance
 
     # With a linked exported audio file:
+    ad.sample_rate *= 2
+    sft.fs = ad.sample_rate
+    bin_idx = min(enumerate(sft.f), key=lambda t: abs(t[1] - sine_frequency))[0]
+
+    ad.write(tmp_path / "audio")
+
+    ad2 = AudioData.from_files(
+        [
+            AudioFile(
+                next((tmp_path / "audio").glob("*.wav")),
+                strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+            ),
+        ],
+        instrument=instrument,
+    )
+
+    sd2 = SpectroData.from_audio_data(ad2, sft)
+    equalized_sx2 = sd2.to_db(sd2.get_value())
+    computed_level_sx2 = equalized_sx2[bin_idx, :].mean()
+
+    assert abs(computed_level_sx2 - expected_level) < level_tolerance
