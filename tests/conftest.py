@@ -64,6 +64,7 @@ def audio_files(
         series_type=series_type,
         sine_frequency=sine_frequency,
         max_value=magnitude,
+        duration=duration,
     )
     files = []
     file_begin_timestamps = (

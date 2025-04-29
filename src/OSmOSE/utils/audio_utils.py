@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import soundfile as sf
 import soxr
+from pandas import Timedelta
 
 from OSmOSE.config import (
     AUDIO_METADATA,
@@ -144,6 +145,7 @@ def generate_sample_audio(
     sine_frequency: float = 1000.0,
     min_value: float = 0.0,
     max_value: float = 1.0,
+    duration: float = 1.0,
     dtype: np.dtype = np.float64,
 ) -> list[np.ndarray]:
     """Generate sample audio data.
@@ -166,6 +168,9 @@ def generate_sample_audio(
         Minimum value of the audio data.
     max_value: float
         Maximum value of the audio data.
+    duration: float
+        Duration of the audio data in seconds.
+        Used to compute the frequency of sine waves.
     dtype: np.dtype
         The type of the output array.
 
@@ -175,6 +180,8 @@ def generate_sample_audio(
         The generated audio data.
 
     """
+    if duration is None:
+        duration = Timedelta(seconds=1)
     if series_type == "repeat":
         return np.split(
             np.tile(
@@ -189,7 +196,7 @@ def generate_sample_audio(
             nb_files,
         )
     if series_type == "sine":
-        t = np.linspace(0, 1, nb_samples)
+        t = np.linspace(0, duration, nb_samples)
         return np.split(
             np.tile(
                 np.sin(2 * np.pi * sine_frequency * t, dtype=dtype) * max_value,
