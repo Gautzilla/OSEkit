@@ -173,7 +173,7 @@ def test_db_conversion(natural: float, decibel: float) -> None:
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "instrument", "sft"),
+    ("audio_files", "instrument", "sft", "expected_level"),
     [
         pytest.param(
             {
@@ -186,6 +186,7 @@ def test_db_conversion(natural: float, decibel: float) -> None:
             },
             None,
             ShortTimeFFT(hamming(128), 10, 48_000, scale_to="magnitude"),
+            0.0,
             id="0_db_fs",
         ),
         pytest.param(
@@ -199,36 +200,124 @@ def test_db_conversion(natural: float, decibel: float) -> None:
             },
             None,
             ShortTimeFFT(hamming(128), 10, 48_000, scale_to="magnitude"),
+            -20.0,
             id="negative_db_fs",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "series_type": "sine",
+                "sine_frequency": 1_000,
+                "magnitude": 1.0,
+            },
+            Instrument(
+                end_to_end_db=0.0,
+            ),
+            ShortTimeFFT(hamming(128), 10, 48_000, scale_to="magnitude"),
+            0.0,
+            id="full_scale_0_dB_SPL",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "series_type": "sine",
+                "sine_frequency": 1_000,
+                "magnitude": 1.0,
+            },
+            Instrument(
+                end_to_end_db=150.0,
+            ),
+            ShortTimeFFT(hamming(128), 10, 48_000, scale_to="magnitude"),
+            150.0,
+            id="full_scale_150_dB_SPL",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "series_type": "sine",
+                "sine_frequency": 1_000,
+                "magnitude": 0.1,
+            },
+            Instrument(
+                end_to_end_db=150.0,
+            ),
+            ShortTimeFFT(hamming(128), 10, 48_000, scale_to="magnitude"),
+            130.0,
+            id="negative_dBFS_to_130_dB_SPL",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "series_type": "sine",
+                "sine_frequency": 15_000,
+                "magnitude": 0.1,
+            },
+            Instrument(
+                end_to_end_db=150.0,
+            ),
+            ShortTimeFFT(hamming(128), 10, 48_000, scale_to="magnitude"),
+            130.0,
+            id="higher_signal_frequency",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "series_type": "sine",
+                "sine_frequency": 15_000,
+                "magnitude": 0.1,
+            },
+            Instrument(
+                sensitivity=3.5e-6,
+                gain_db=50.0,
+                peak_voltage=0.1,
+            ),
+            ShortTimeFFT(hamming(128), 10, 48_000, scale_to="magnitude"),
+            139.0,
+            id="full_instrument_chain",
         ),
     ],
     indirect=["audio_files"],
 )
 def test_instrument_level_spectrum(
-    audio_files: pytest.fixture, instrument: Instrument | None, sft: ShortTimeFFT
+    tmp_path: pytest.fixture,
+    audio_files: pytest.fixture,
+    instrument: Instrument | None,
+    sft: ShortTimeFFT,
+    expected_level: float,
 ) -> None:
 
     af, request = audio_files
     ad = AudioData.from_files(
-        [AudioFile(af[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)]
+        [AudioFile(af[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)],
+        instrument=instrument,
     )
     sd = SpectroData.from_audio_data(ad, sft)
 
     sine_frequency = request.param["sine_frequency"]
-    sine_magnitude = request.param["magnitude"]
 
     # Get the bin index which center frequency is the closest to the signal frequency:
     bin_idx = min(enumerate(sft.f), key=lambda t: abs(t[1] - sine_frequency))[0]
 
-    expected_level = 20 * np.log10(sine_magnitude)
     # Level in db FS if no instrument, dB SPL otherwise
-    expected_level += 0 if instrument is None else 20 * np.log10(1 / instrument.P_REF)
-
     # We'll not land on exactly the expected level because energy
     # scatters around sine_frequency
-    level_tolerance = 10
+    level_tolerance = 8
 
     equalized_sx = sd.to_db(sd.get_value())
     computed_level = equalized_sx[bin_idx, :].mean()
+
+    # For the full chain, the expected level is:
+    # L = 20*log10((M*peak_voltage)/(P_REF*S*10**(G/20))) with M being the signal
+    # peak value, in raw wav data ([-1.;1])
 
     assert abs(computed_level - expected_level) < level_tolerance
