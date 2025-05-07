@@ -8,6 +8,7 @@ It has additionnal metadata that can be exported, e.g. to APLOSE.
 
 from __future__ import annotations
 
+import random
 import shutil
 import sys
 from pathlib import Path
@@ -18,6 +19,7 @@ from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
+from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.public_api import Analysis
 from OSmOSE.utils.core_utils import (
@@ -119,6 +121,62 @@ class Dataset:
                 file.unlink()
 
         self.datasets = {}
+
+    def sample_spectra(
+        self,
+        fft: ShortTimeFFT,
+        nb_spectra: int = 1,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        data_duration: Timedelta | None = None,
+        sample_rate: float | None = None,
+        v_lim: tuple[float, float] | None = None,
+    ) -> list[SpectroData]:
+        """Return a list of sample SpectroData.
+
+        These SpectroData can be plotted to check the validity of the
+        parameters before running a full analysis.
+
+        Parameters
+        ----------
+        fft: ShortTimeFFT | None
+            FFT to use for computing the spectra.
+        nb_spectra: int
+            Number of samples to return.
+        begin: Timestamp | None
+            The begin of the first random SpectroData that can be returned.
+            Defaulted to the begin of the original dataset.
+        end: Timestamp | None
+            The end of the last random SpectroData that can be returned.
+            Defaulted to the end of the original dataset.
+        data_duration: Timedelta | None
+            Duration of the sample SpectroData.
+            If not provided, one sample SpectroData will cover the whole time period.
+        sample_rate: float | None
+            Sample rate of the sample SpectroData.
+            Audio data will be resampled if provided, else the sample rate
+            will be set to the one of the original dataset.
+        v_lim: tuple[float, float] | None
+            Limits (in dB) of the colormap used for plotting the spectrogram.
+
+        Returns
+        -------
+        list[SpectroData]:
+            List of nb_spectra sample SpectroData.
+
+        """
+        ads = AudioDataset.from_files(
+            files=list(self.origin_files),
+            begin=begin,
+            end=end,
+            data_duration=data_duration,
+            instrument=self.instrument,
+        )
+        ads.sample_rate = sample_rate
+        ads = random.sample(ads.data, nb_spectra)
+        return [
+            SpectroData.from_audio_data(data=ad, fft=fft, v_lim=v_lim) for ad in ads
+        ]
 
     def run_analysis(  # noqa: PLR0913
         self,
