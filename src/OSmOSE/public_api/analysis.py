@@ -23,7 +23,7 @@ class AnalysisType(Flag):
         Will export the spectrogram png images.
 
     Multiple flags can be enabled thanks to the logical or | operator:
-    Analysis.AUDIO | Analysis.SPECTROGRAM will export both audio files and
+    AnalysisType.AUDIO | AnalysisType.SPECTROGRAM will export both audio files and
     spectrogram images.
 
     >>> # Exporting both the reshaped audio and the spectrograms

@@ -135,11 +135,13 @@ class Dataset:
         analysis: Analysis
             Analysis for which to generate sample SpectroData objects.
             See the public_api.Analysis.Analysis docstring for more info.
+        nb_spectra: int
+            The number of sample SpectroData to return.
 
         Returns
         -------
         list[SpectroData]:
-            List of nb_spectra sample SpectroData.
+            List of nb_spectra sample SpectroData objects.
 
         """
         ads = AudioDataset.from_files(
@@ -263,11 +265,11 @@ class Dataset:
             exported (relative to sds.folder)
         sds: SpectroDataset
             The SpectroDataset on which the data should be written.
-        analysis_type : Analysis
-            Analysis to be performed.
+        analysis_type : AnalysisType
+            Type of the analysis to be performed.
             AudioDataset and SpectroDataset instances will be
             created depending on the flags.
-            See OSmOSE.public_api.dataset.Analysis docstring for more information.
+            See OSmOSE.public_api.analysis.AnalysisType docstring for more information.
         ads: AudioDataset
             The AudioDataset on which the data should be written.
         link: bool
