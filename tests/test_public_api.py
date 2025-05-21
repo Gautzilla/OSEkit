@@ -610,3 +610,81 @@ def test_serialization(
                 d_o.data[0].to_db(d_o.data[0].get_value()),
                 d_d.data[0].to_db(d_d.data[0].get_value()),
             )
+
+
+@pytest.mark.parametrize(
+    "analysis_type",
+    [
+        pytest.param(
+            AnalysisType.SPECTROGRAM,
+            id="spectro_only",
+        ),
+        pytest.param(
+            AnalysisType.SPECTROGRAM,
+            id="matrix_only",
+        ),
+        pytest.param(
+            AnalysisType.SPECTROGRAM,
+            id="both_spectral_flags",
+        ),
+    ],
+)
+def test_spectral_analysis_error_if_no_provided_fft(analysis_type: Analysis) -> None:
+    with pytest.raises(
+        ValueError,
+        match="FFT parameter should be given if spectra outputs are selected.",
+    ) as e:
+        assert (
+            Analysis(
+                analysis_type=AnalysisType.SPECTROGRAM,
+            )
+            == e
+        )
+
+
+@pytest.mark.parametrize(
+    ("analysis", "expected"),
+    [
+        pytest.param(
+            Analysis(analysis_type=AnalysisType.AUDIO),
+            False,
+            id="audio_only",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.SPECTROGRAM,
+                fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+            ),
+            True,
+            id="spectro_only",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.MATRIX,
+                fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+            ),
+            True,
+            id="matrix_only",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.MATRIX | AnalysisType.SPECTROGRAM,
+                fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+            ),
+            True,
+            id="matrix_and_spectro",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.MATRIX
+                | AnalysisType.SPECTROGRAM
+                | AnalysisType.AUDIO,
+                fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+            ),
+            True,
+            id="all_flags",
+        ),
+    ],
+)
+def test_analysis_is_spectro(analysis: Analysis, expected: bool) -> None:
+    assert analysis.is_spectro is expected
