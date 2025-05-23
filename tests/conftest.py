@@ -167,7 +167,7 @@ def base_dataset(tmp_path: Path) -> BaseDataset:
 
     bfs = [
         BaseFile(path=file, begin=timestamp, end=timestamp + pd.Timedelta(seconds=1))
-        for file, timestamp in zip(files, timestamps)
+        for file, timestamp in zip(files, timestamps, strict=False)
     ]
     return BaseDataset.from_files(files=bfs, bound="files")
 
@@ -223,7 +223,7 @@ def input_dataset(tmp_path: Path):
     return dict(
         zip(
             ["main_dir", "main_audio_dir", "orig_audio_dir", "process_dir"],
-            folders_to_create,
+            folders_to_create, strict=False,
         ),
     )
 

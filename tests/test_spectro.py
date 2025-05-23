@@ -64,7 +64,7 @@ def test_spectrogram_shape(
         strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
     )
     spectro_dataset = SpectroDataset.from_audio_dataset(dataset, sft)
-    for audio, spectro in zip(dataset.data, spectro_dataset.data):
+    for audio, spectro in zip(dataset.data, spectro_dataset.data, strict=False):
         assert spectro.shape == spectro.get_value().shape
         assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.shape))
 

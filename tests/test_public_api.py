@@ -461,7 +461,7 @@ def test_reshape(
         np.array_equal(ad.get_value(), expected_ad.get_value())
         for ad, expected_ad in zip(
             sorted(ads.data, key=lambda ad: ad.begin),
-            sorted(expected_ads.data, key=lambda ad: ad.begin),
+            sorted(expected_ads.data, key=lambda ad: ad.begin), strict=False,
         )
     )
 
@@ -594,7 +594,7 @@ def test_serialization(
     for (t_o, d_o), (t_d, d_d) in list(
         zip(
             sorted(dataset.datasets.items(), key=lambda d: d[0]),
-            sorted(deserialized.datasets.items(), key=lambda d: d[0]),
+            sorted(deserialized.datasets.items(), key=lambda d: d[0]), strict=False,
         ),
     ):
         # Same analysis dataset type

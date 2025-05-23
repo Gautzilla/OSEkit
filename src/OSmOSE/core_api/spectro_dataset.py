@@ -153,7 +153,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         for sd, ad in list(
             zip(
                 sorted(self.data, key=lambda d: (d.begin, d.end)),
-                sorted(audio_dataset.data, key=lambda d: (d.begin, d.end)),
+                sorted(audio_dataset.data, key=lambda d: (d.begin, d.end)), strict=False,
             ),
         )[first:last]:
             sd.link_audio_data(ad)

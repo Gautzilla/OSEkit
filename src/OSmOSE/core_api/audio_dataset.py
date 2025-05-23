@@ -58,7 +58,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             self.instrument = instrument
         else:
             self.instrument = next(
-                (d.instrument for d in data if d.instrument is not None), None
+                (d.instrument for d in data if d.instrument is not None), None,
             )
 
     @property

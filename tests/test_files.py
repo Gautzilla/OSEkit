@@ -184,6 +184,6 @@ def test_dataset_localization(
         begin == expected
         for begin, expected in zip(
             expected_begins,
-            [file.begin for file in sorted(dataset.files, key=lambda f: f.begin)],
+            [file.begin for file in sorted(dataset.files, key=lambda f: f.begin)], strict=False,
         )
     )

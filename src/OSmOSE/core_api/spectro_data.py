@@ -380,7 +380,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         ad_split = [
             self.audio_data.split_frames(start_frame=a, stop_frame=b)
-            for a, b in zip(split_frames, split_frames[1:])
+            for a, b in zip(split_frames, split_frames[1:], strict=False)
         ]
         return [SpectroData.from_audio_data(ad, self.fft) for ad in ad_split]
 
