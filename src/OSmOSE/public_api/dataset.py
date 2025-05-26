@@ -29,7 +29,6 @@ from OSmOSE.utils.core_utils import (
 from OSmOSE.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
-
     from OSmOSE.core_api.audio_file import AudioFile
     from OSmOSE.job import Job_builder
 

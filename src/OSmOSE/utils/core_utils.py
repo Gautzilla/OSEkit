@@ -265,7 +265,6 @@ def locked(lock_file: Path) -> callable:
 
     def inner(func: callable) -> callable:
         def wrapper(*args: any, **kwargs: any) -> any:
-
             # Wait for the lock to be released
             while lock_file.exists():
                 time.sleep(1)

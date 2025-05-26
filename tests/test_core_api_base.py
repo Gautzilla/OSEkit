@@ -554,7 +554,6 @@ def test_base_dataset_file_bound(
     data_duration: Timedelta | None,
     expected_data: list[tuple[Event, str]],
 ) -> None:
-
     ds = BaseDataset.from_files(
         files=files,
         bound=bound,

@@ -134,7 +134,6 @@ def test_move_tree(
     destination: Path,
     excluded_files: set[str],
 ) -> None:
-
     for f in files:
         (tmp_path / f).parent.mkdir(exist_ok=True, parents=True)
         (tmp_path / f).touch()
@@ -286,7 +285,6 @@ def test_locked(tmp_path: pytest.fixture, monkeypatch: pytest.MonkeyPatch) -> No
 
     @locked(lock_file=lock_file)
     def edit_file(line_to_add: str) -> None:
-
         # locked decorator should create the lock file
         assert lock_file.exists()
 
