@@ -1,5 +1,5 @@
 [project]
-name = "osmose"
+name = "OSmOSE"
 version = "0.2.5"
 description = "OSmOSE toolkit"
 readme = "README.md"
@@ -29,7 +29,11 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "coverage>=7.8.2",
     "ruff>=0.11.10",
+    "sphinx>=8.2.3",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-rtd-theme>=3.0.2",
 ]
 
 [tool.ruff]
