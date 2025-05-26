@@ -37,7 +37,7 @@ dev = [
 ]
 
 [tool.ruff]
-select = ["ALL"]
+lint.select = ["ALL"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
