@@ -5,6 +5,8 @@ Public API
 
 This API provides tools for working on large sets of audio data.
 
+Basically, the whole point of **OSEkit**'s Public API is to export large amounts of spectrograms and/or reshaped audio files with no consideration of the original format of the audio files.
+
 The :class:`OSmOSE.public_api.dataset.Dataset` class is the cornerstone of **OSEkit**'s Public API.
 
 Building a ``Dataset``
@@ -25,6 +27,10 @@ For example, this folder containing 4 audio files plus some extra files:
     bar.txt
 
 Only the folder path and strptime format are required to initialize the ``Dataset``.
+
+Extra parameters allow for e.g. localizing the files in a specific timezone or accounting for the measurement chain to link the raw wav data to the measured acoustic presure.
+The complete list of extra parameters is provided in the :class:`OSmOSE.public_api.dataset.Dataset` documentation.
+
 Once this is done, the ``Dataset`` can be built using the :meth:`OSmOSE.public_api.dataset.Dataset.build` method,
 which organizes the folder in the following fashion:
 
@@ -40,10 +46,12 @@ which organizes the folder in the following fashion:
             └── original.json
     other
     ├── foo
-    │   └── bar.zip
+    │   ├── bar.zip
+    │   └── 7181.wav
     └── bar.txt
     dataset.json
 
 The **original audio files** have been turned into a :class:`OSmOSE.core_api.audio_dataset.AudioDataset`.
-Additionally, both this Core API Audiodataset and the Public API Dataset have been serialized
+In this ``AudioDataset``, one :class:`OSmOSE.core_api.audio_data.AudioData` has been created per original audio file.
+Additionally, both this Core API ``Audiodataset`` and the Public API ``Dataset`` have been serialized
 into the ``original.json`` and ``dataset.json`` files, respectively.

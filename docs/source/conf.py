@@ -18,6 +18,7 @@ extensions = ["myst_parser", "sphinx.ext.autodoc"]
 
 templates_path = ["_templates"]
 exclude_patterns = []
+autoclass_content = "both"
 
 
 
