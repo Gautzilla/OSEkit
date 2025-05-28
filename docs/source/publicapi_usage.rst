@@ -31,8 +31,23 @@ Only the folder path and strptime format are required to initialize the ``Datase
 Extra parameters allow for e.g. localizing the files in a specific timezone or accounting for the measurement chain to link the raw wav data to the measured acoustic presure.
 The complete list of extra parameters is provided in the :class:`OSmOSE.public_api.dataset.Dataset` documentation.
 
-Once this is done, the ``Dataset`` can be built using the :meth:`OSmOSE.public_api.dataset.Dataset.build` method,
-which organizes the folder in the following fashion:
+.. code-block:: python
+
+    from OSmOSE.public_api.dataset import Dataset
+    from pathlib import Path
+
+    dataset = Dataset(
+        folder=Path(r"...\dataset_folder"),
+        strptime_format="%y%m%d%H%M%S" # Must match the strptime format of your audio files
+    )
+
+Once this is done, the ``Dataset`` can be built using the :meth:`OSmOSE.public_api.dataset.Dataset.build` method.
+
+.. code-block:: python
+
+    dataset.build()
+
+The folder is now organized in the following fashion:
 
 .. code-block::
 
@@ -285,3 +300,17 @@ The dataset folder now looks like this (the output from the first example was re
 As in :ref:`the output of example 1 <output_1>`, a ``full_analysis_audio`` folder was created, containing the reshaped audio files.
 
 Additionally, the fresh ``processed`` folder contains the output spectrograms and NPZ matrices, along with the ``full_analysis.json`` serialized :class:`OSmOSE.core_api.spectro_dataset.SpectroDataset`.
+
+
+Recovering a ``Dataset``
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``dataset.json`` file in the root dataset folder can be used to deserialize a :class:`OSmOSE.public_api.dataset.Dataset` object thanks to the :meth:`OSmOSE.public_api.dataset.Dataset.from_json` method:
+
+.. code-block:: python
+
+    from pathlib import Path
+    from OSmOSE.public_api.dataset import Dataset
+
+    json_file = Path(r"../dataset.json")
+    dataset = Dataset.from_json(json_file) # That's it!
