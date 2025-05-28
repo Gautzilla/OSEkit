@@ -21,13 +21,14 @@ exclude_patterns = []
 autoclass_content = "both"
 
 
-
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
-html_sidebars = {"**": ["globaltoc.html", "localtoc.html", "relations.html", "searchbox.html"]} # Displays the global TOC in the sidebar
+html_sidebars = {
+    "**": ["globaltoc.html", "localtoc.html", "relations.html", "searchbox.html"]
+}  # Displays the global TOC in the sidebar
 html_theme_options = {
     "collapse_navigation": False,
     "sticky_navigation": True,

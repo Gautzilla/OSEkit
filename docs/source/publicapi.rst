@@ -7,3 +7,4 @@ Public API
    :maxdepth: 1
 
    dataset
+   analysis

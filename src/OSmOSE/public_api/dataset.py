@@ -47,7 +47,7 @@ class Dataset:
         folder: Path,
         strptime_format: str,
         gps_coordinates: str | list | tuple = (0, 0),
-        depth: float = 0.,
+        depth: float = 0.0,
         timezone: str | None = None,
         datasets: dict | None = None,
         job_builder: Job_builder | None = None,
