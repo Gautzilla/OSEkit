@@ -55,3 +55,4 @@ The **original audio files** have been turned into a :class:`OSmOSE.core_api.aud
 In this ``AudioDataset``, one :class:`OSmOSE.core_api.audio_data.AudioData` has been created per original audio file.
 Additionally, both this Core API ``Audiodataset`` and the Public API ``Dataset`` have been serialized
 into the ``original.json`` and ``dataset.json`` files, respectively.
+

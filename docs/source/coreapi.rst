@@ -7,6 +7,7 @@ Core API
    :maxdepth: 1
 
    event
+   instrument
    basefile
    baseitem
    basedata
