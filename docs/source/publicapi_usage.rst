@@ -12,6 +12,8 @@ The :class:`OSmOSE.public_api.dataset.Dataset` class is the cornerstone of **OSE
 Building a ``Dataset``
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. _build:
+
 At first, A ``Dataset`` is built from a raw folder containing the audio files to be processed.
 For example, this folder containing 4 audio files plus some extra files:
 
@@ -314,3 +316,14 @@ The ``dataset.json`` file in the root dataset folder can be used to deserialize 
 
     json_file = Path(r"../dataset.json")
     dataset = Dataset.from_json(json_file) # That's it!
+
+
+Resetting a ``Dataset``
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. warning::
+
+    Calling this method is irreversible
+
+The :meth:`OSmOSE.public_api.dataset.Dataset.reset` method **resets the dataset's folder** to its initial state.
+All exported analyses ans json files will be removed, and the folder will be back to its state :ref:`before building the dataset <build>`.
