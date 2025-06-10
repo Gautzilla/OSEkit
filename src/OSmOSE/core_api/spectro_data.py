@@ -43,6 +43,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         fft: ShortTimeFFT | None = None,
         db_ref: float | None = None,
         v_lim: tuple[float, float] | None = None,
+        colormap: str = "viridis",
     ) -> None:
         """Initialize a SpectroData from a list of SpectroItems.
 
@@ -65,6 +66,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         v_lim: tuple[float,float]
             Lower and upper limits (in dB) of the colormap used
             for plotting the spectrogram.
+        colormap: str
+            Colormap to use for plotting the spectrogram.
 
         """
         super().__init__(items=items, begin=begin, end=end)
@@ -79,6 +82,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             if db_ref is None
             else (0.0, 170.0)
         )
+        self.colormap = colormap
 
     @staticmethod
     def get_default_ax() -> plt.Axes:
@@ -221,7 +225,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
 
-        ax.pcolormesh(time, freq, sx, vmin=self._v_lim[0], vmax=self._v_lim[1])
+        ax.pcolormesh(time, freq, sx, vmin=self._v_lim[0], vmax=self._v_lim[1], cmap=self.colormap)
 
     def to_db(self, sx: np.ndarray) -> np.ndarray:
         """Convert the sx values to dB.
