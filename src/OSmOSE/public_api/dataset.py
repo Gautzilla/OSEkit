@@ -366,8 +366,8 @@ class Dataset:
                 script_path=export_analysis.__file__,
                 script_args=f"--dataset-json-path {self.folder / 'dataset.json'} "
                 f"--analysis {analysis_type.value} "
-                f"--ads-name {ads.name if ads is not None else ''} "
-                f"--sds-name {sds.name if sds is not None else ''} "
+                f"--ads-name {ads.name if ads is not None else 'None'} "
+                f"--sds-name {sds.name if sds is not None else 'None'} "
                 f"--subtype {subtype} "
                 f"--matrix-folder-name {matrix_folder_name} "
                 f"--spectrogram-folder-name {spectrogram_folder_name} "
