@@ -223,6 +223,7 @@ class Dataset:
             fft=analysis.fft,
             name=ads.base_name,
             v_lim=analysis.v_lim,
+            colormap=analysis.colormap,
         )
 
     def run_analysis(
