@@ -298,9 +298,9 @@ def test_instrument_level_spectrum(
     sft: ShortTimeFFT,
     expected_level: float,
 ) -> None:
-    af, request = audio_files
+    afs, request = audio_files
     ad = AudioData.from_files(
-        [AudioFile(af[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)],
+        afs,
         instrument=instrument,
     )
     sd = SpectroData.from_audio_data(ad, sft)

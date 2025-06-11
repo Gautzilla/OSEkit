@@ -59,17 +59,13 @@ from OSmOSE.utils.audio_utils import generate_sample_audio
     indirect=True,
 )
 def test_audio_file_timestamps(
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
 ) -> None:
-    files, request = audio_files
+    audio_files, request = audio_files
     duration = request.param["duration"]
     date_begin = request.param["date_begin"]
 
-    for file in files:
-        audio_file = AudioFile(
-            file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
-        )
-
+    for audio_file in audio_files:
         assert audio_file.begin == date_begin
         assert audio_file.end == date_begin + pd.Timedelta(seconds=duration)
 
@@ -182,16 +178,13 @@ def test_audio_file_timestamps(
     indirect=["audio_files"],
 )
 def test_audio_file_read(
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     start: pd.Timestamp,
     stop: pd.Timestamp,
     expected: np.ndarray,
 ) -> None:
     files, request = audio_files
-    file = AudioFile(
-        files[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
-    )
-    assert np.allclose(file.read(start, stop), expected, atol=1e-7)
+    assert np.allclose(files[0].read(start, stop), expected, atol=1e-7)
 
 
 @pytest.mark.parametrize(
@@ -353,16 +346,13 @@ def test_audio_file_read(
     indirect=["audio_files"],
 )
 def test_audio_item(
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     start: pd.Timestamp | None,
     stop: pd.Timestamp | None,
     expected: np.ndarray,
 ) -> None:
     files, request = audio_files
-    file = AudioFile(
-        files[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
-    )
-    item = AudioItem(file, start, stop)
+    item = AudioItem(files[0], start, stop)
     assert np.array_equal(item.get_value(), expected)
 
 
@@ -455,17 +445,13 @@ def test_audio_item(
     indirect=["audio_files"],
 )
 def test_audio_data(
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     start: pd.Timestamp | None,
     stop: pd.Timestamp | None,
     expected: np.ndarray,
 ) -> None:
     files, request = audio_files
-    audio_files = [
-        AudioFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
-        for file in files
-    ]
-    data = AudioData.from_files(audio_files, begin=start, end=stop)
+    data = AudioData.from_files(files, begin=start, end=stop)
     if all(item.is_empty for item in data.items):
         data.sample_rate = 48_000
     assert np.array_equal(data.get_value(), expected)
@@ -508,14 +494,11 @@ def test_audio_data(
     indirect=True,
 )
 def test_read_vs_soundfile(
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
 ) -> None:
     audio_files, _ = audio_files
-    af = AudioFile(
-        audio_files[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
-    )
-    ad = AudioData.from_files([af])
-    assert np.array_equal(sf.read(audio_files[0])[0], ad.get_value())
+    ad = AudioData.from_files(audio_files)
+    assert np.array_equal(sf.read(audio_files[0].path)[0], ad.get_value())
 
 
 @pytest.mark.parametrize(
@@ -582,17 +565,13 @@ def test_read_vs_soundfile(
     indirect=["audio_files"],
 )
 def test_audio_resample_sample_count(
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     start: pd.Timestamp | None,
     stop: pd.Timestamp | None,
     sample_rate: int,
     expected_nb_samples: int,
 ) -> None:
-    files, request = audio_files
-    audio_files = [
-        AudioFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
-        for file in files
-    ]
+    audio_files, request = audio_files
     data = AudioData.from_files(audio_files, begin=start, end=stop)
     data.sample_rate = sample_rate
     assert data.get_value().shape[0] == expected_nb_samples
@@ -661,9 +640,7 @@ def test_audio_resample_quality(
     importlib.reload(OSmOSE.config)
 
     files, _ = audio_files
-    af = AudioFile(
-        files[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
-    )
+    af = files[0]
 
     downsampling_default = resample_quality_settings["downsample"]
     upsampling_default = resample_quality_settings["upsample"]

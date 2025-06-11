@@ -371,16 +371,13 @@ def test_spectrogram_from_npz_files(
 )
 def test_spectrogram_sx_dtype(
     tmp_path: Path,
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     origin_dtype: type[complex],
     target_dtype: type[complex],
     expected_value_dtype: type[complex],
 ) -> None:
-    audio_file, request = audio_files
-    af = AudioFile(
-        audio_file[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
-    )
-    ad = AudioData.from_files([af])
+    audio_files, request = audio_files
+    ad = AudioData.from_files(audio_files)
     sft = ShortTimeFFT(hamming(128), 128, 1_024)
     sd = SpectroData.from_audio_data(ad, sft)
 
@@ -542,15 +539,12 @@ def test_link_audio_data(
     ad2_sr: float,
     expected_exception: type[Exception],
 ) -> None:
-    audio_file, request = audio_files
-    af = AudioFile(
-        audio_file[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
-    )
+    audio_files, request = audio_files
 
-    ad1 = AudioData.from_files([af], begin=ad1.begin, end=ad1.end)
+    ad1 = AudioData.from_files(audio_files, begin=ad1.begin, end=ad1.end)
     ad1.sample_rate = ad1_sr
 
-    ad2 = AudioData.from_files([af], begin=ad2.begin, end=ad2.end)
+    ad2 = AudioData.from_files(audio_files, begin=ad2.begin, end=ad2.end)
     ad2.sample_rate = ad2_sr
 
     sd = SpectroData.from_audio_data(
