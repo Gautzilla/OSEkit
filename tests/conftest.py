@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 import soundfile as sf
 
-from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
 from OSmOSE.core_api import AudioFileManager
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.base_file import BaseFile
@@ -41,7 +41,7 @@ def audio_files(
         format = request.param.get("format", "wav")
         datetime_format = request.param.get(
             "datetime_format",
-            TIMESTAMP_FORMAT_TEST_FILES,
+            TIMESTAMP_FORMAT_EXPORTED_FILES,
         )
     else:
         sample_rate = 48_000
@@ -52,7 +52,7 @@ def audio_files(
         sine_frequency = 1000.0
         magnitude = 1.0
         format = "wav"
-        datetime_format = TIMESTAMP_FORMAT_TEST_FILES
+        datetime_format = TIMESTAMP_FORMAT_EXPORTED_FILES
 
     nb_samples = int(round(duration * sample_rate))
     data = generate_sample_audio(

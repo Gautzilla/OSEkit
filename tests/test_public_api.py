@@ -11,7 +11,6 @@ from scipy.signal.windows import hamming
 from OSmOSE.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES,
     TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
-    TIMESTAMP_FORMAT_TEST_FILES,
 )
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.event import Event
@@ -242,7 +241,7 @@ def test_dataset_build(
     expected_audio_events: list[Event],
 ) -> None:
     timestamp_format = (
-        TIMESTAMP_FORMAT_TEST_FILES if timestamp_format is None else timestamp_format
+        TIMESTAMP_FORMAT_EXPORTED_FILES if timestamp_format is None else timestamp_format
     )
 
     # add other files
@@ -426,7 +425,7 @@ def test_reshape(
     audio_files: pytest.fixture,
     analysis: Analysis,
 ) -> None:
-    dataset = Dataset(folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    dataset = Dataset(folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
     dataset.build()
     dataset.run_analysis(
         analysis=analysis,
@@ -562,7 +561,7 @@ def test_serialization(
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
         instrument=instrument,
     )
     dataset.build()
@@ -931,7 +930,7 @@ def test_get_analysis_audiodataset(
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
         instrument=instrument,
     )
     dataset.build()
@@ -1005,7 +1004,7 @@ def test_get_analysis_spectrodataset(
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
         instrument=instrument,
     )
     dataset.build()
@@ -1037,11 +1036,11 @@ def test_get_analysis_spectrodataset(
 
 
 def test_edit_analysis_before_run(
-    tmp_path: pytest.fixture, audio_files: pytest.fixture
+    tmp_path: pytest.fixture, audio_files: pytest.fixture,
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
         instrument=Instrument(end_to_end_db=150),
     )
 
@@ -1078,10 +1077,10 @@ def test_edit_analysis_before_run(
     assert (dataset.folder / "processed" / ads.base_name).exists()
 
     analysis_ads = AudioDataset.from_json(
-        dataset.get_dataset(f"{new_name}_audio").folder / f"{new_name}_audio.json"
+        dataset.get_dataset(f"{new_name}_audio").folder / f"{new_name}_audio.json",
     )
     analysis_sds = SpectroDataset.from_json(
-        dataset.get_dataset(new_name).folder / f"{new_name}.json"
+        dataset.get_dataset(new_name).folder / f"{new_name}.json",
     )
 
     # Only filtered data have been written

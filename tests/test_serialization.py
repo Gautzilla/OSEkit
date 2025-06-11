@@ -8,7 +8,7 @@ from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES, TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
@@ -108,7 +108,7 @@ def test_audio_data_serialization(
     sample_rate: float,
 ) -> None:
     af = [
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
         for f in tmp_path.glob("*.wav")
     ]
 
@@ -187,7 +187,7 @@ def test_audio_dataset_serialization(
 ) -> None:
     ads = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
         data_duration=data_duration,
         name=name,
     )
@@ -520,7 +520,7 @@ def test_spectro_data_serialization(
     colormap: str | None,
 ) -> None:
     af = [
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
         for f in tmp_path.glob("*.wav")
     ]
 
@@ -718,7 +718,7 @@ def test_spectro_dataset_serialization(
 ) -> None:
     ads = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
         data_duration=data_duration,
         instrument=instrument,
     )

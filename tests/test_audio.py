@@ -12,7 +12,7 @@ import soundfile as sf
 from pandas import Timestamp
 
 import OSmOSE
-from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES, resample_quality_settings
+from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES, resample_quality_settings
 from OSmOSE.core_api import audio_file_manager as afm
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
@@ -63,7 +63,7 @@ def test_audio_file_timestamps(
     date_begin = request.param["date_begin"]
 
     for file in files:
-        audio_file = AudioFile(file, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+        audio_file = AudioFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
 
         assert audio_file.begin == date_begin
         assert audio_file.end == date_begin + pd.Timedelta(seconds=duration)
@@ -183,7 +183,7 @@ def test_audio_file_read(
     expected: np.ndarray,
 ) -> None:
     files, request = audio_files
-    file = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    file = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
     assert np.allclose(file.read(start, stop), expected, atol=1e-7)
 
 
@@ -352,7 +352,7 @@ def test_audio_item(
     expected: np.ndarray,
 ) -> None:
     files, request = audio_files
-    file = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    file = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
     item = AudioItem(file, start, stop)
     assert np.array_equal(item.get_value(), expected)
 
@@ -453,7 +453,7 @@ def test_audio_data(
 ) -> None:
     files, request = audio_files
     audio_files = [
-        AudioFile(file, strptime_format=TIMESTAMP_FORMAT_TEST_FILES) for file in files
+        AudioFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES) for file in files
     ]
     data = AudioData.from_files(audio_files, begin=start, end=stop)
     if all(item.is_empty for item in data.items):
@@ -501,7 +501,7 @@ def test_read_vs_soundfile(
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
 ) -> None:
     audio_files, _ = audio_files
-    af = AudioFile(audio_files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    af = AudioFile(audio_files[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
     ad = AudioData.from_files([af])
     assert np.array_equal(sf.read(audio_files[0])[0], ad.get_value())
 
@@ -578,7 +578,7 @@ def test_audio_resample_sample_count(
 ) -> None:
     files, request = audio_files
     audio_files = [
-        AudioFile(file, strptime_format=TIMESTAMP_FORMAT_TEST_FILES) for file in files
+        AudioFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES) for file in files
     ]
     data = AudioData.from_files(audio_files, begin=start, end=stop)
     data.sample_rate = sample_rate
@@ -648,7 +648,7 @@ def test_audio_resample_quality(
     importlib.reload(OSmOSE.config)
 
     files, _ = audio_files
-    af = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    af = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
 
     downsampling_default = resample_quality_settings["downsample"]
     upsampling_default = resample_quality_settings["upsample"]
@@ -844,7 +844,7 @@ def test_audio_dataset_from_folder(
 ) -> None:
     dataset = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
         begin=begin,
         end=end,
         bound=bound,
@@ -941,7 +941,7 @@ def test_audio_dataset_from_files(
     expected_audio_data: list[np.ndarray],
 ) -> None:
     afs = [
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
         for f in tmp_path.glob("*.wav")
     ]
     dataset = AudioDataset.from_files(
@@ -981,11 +981,11 @@ def test_audio_dataset_from_files(
             [],
             [
                 pd.Timestamp("2000-01-01 00:00:00").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".wav",
                 pd.Timestamp("2000-01-01 00:00:10").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".flac",
             ],
@@ -1011,11 +1011,11 @@ def test_audio_dataset_from_files(
             ),
             [
                 pd.Timestamp("2000-01-01 00:00:00").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".wav",
                 pd.Timestamp("2000-01-01 00:00:10").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".flac",
             ],
@@ -1039,7 +1039,7 @@ def test_audio_dataset_from_files(
             [],
             [
                 pd.Timestamp("2000-01-01 00:00:00").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".csv",
             ],
@@ -1051,17 +1051,17 @@ def test_audio_dataset_from_files(
             [],
             [
                 pd.Timestamp("2000-01-01 00:00:00").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".wav",
                 pd.Timestamp("2000-01-01 00:00:10").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".flac",
             ],
             [
                 pd.Timestamp("2000-01-01 00:00:00").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".csv",
             ],
@@ -1086,17 +1086,17 @@ def test_audio_dataset_from_files(
             ),
             [
                 pd.Timestamp("2000-01-01 00:00:00").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".wav",
                 pd.Timestamp("2000-01-01 00:00:10").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".flac",
             ],
             [
                 pd.Timestamp("2000-01-01 00:00:00").strftime(
-                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 )
                 + ".csv",
             ],
@@ -1124,19 +1124,19 @@ def test_audio_dataset_from_folder_errors_warnings(
                 assert (
                     AudioDataset.from_folder(
                         tmp_path,
-                        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+                        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                     )
                     == e
                 )
         else:
             dataset = AudioDataset.from_folder(
                 tmp_path,
-                strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+                strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
             )
             assert all(
                 np.array_equal(data.get_value(), expected)
                 for (data, expected) in zip(
-                    dataset.data, expected_audio_data, strict=False
+                    dataset.data, expected_audio_data, strict=False,
                 )
             )
         assert all(f in caplog.text for f in corrupted_audio_files)
@@ -1207,7 +1207,7 @@ def test_write_files(
 ) -> None:
     dataset = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
     )
     output_path = tmp_path / "output"
     dataset.write(output_path, subtype=subtype, link=link)
@@ -1288,7 +1288,7 @@ def test_split_data(
 ) -> None:
     dataset = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
     )
     for data in dataset.data:
         subdata_shape = data.shape // nb_subdata
@@ -1387,7 +1387,7 @@ def test_split_data_frames(
 ) -> None:
     dataset = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
     )
     ad = dataset.data[0].split_frames(start_frame, stop_frame)
 
@@ -1416,7 +1416,7 @@ def test_move_audio_file(
 ) -> None:
     ad = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
     ).data[0]
     af = next(iter(ad.files))
 
@@ -1561,7 +1561,7 @@ def test_audio_data_equality(
     expected: bool,
 ) -> None:
     afs = iter(
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
         for f in tmp_path.glob("*.wav")
     )
     af1 = next(afs)
