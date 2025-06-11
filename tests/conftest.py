@@ -10,7 +10,10 @@ import pandas as pd
 import pytest
 import soundfile as sf
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+)
 from OSmOSE.core_api import AudioFileManager
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.base_file import BaseFile
@@ -39,10 +42,6 @@ def audio_files(
         sine_frequency = request.param.get("sine_frequency", 1000.0)
         magnitude = request.param.get("magnitude", 1.0)
         format = request.param.get("format", "wav")
-        datetime_format = request.param.get(
-            "datetime_format",
-            TIMESTAMP_FORMAT_EXPORTED_FILES,
-        )
     else:
         sample_rate = 48_000
         duration = 1.0
@@ -52,7 +51,6 @@ def audio_files(
         sine_frequency = 1000.0
         magnitude = 1.0
         format = "wav"
-        datetime_format = TIMESTAMP_FORMAT_EXPORTED_FILES
 
     nb_samples = int(round(duration * sample_rate))
     data = generate_sample_audio(
@@ -63,6 +61,7 @@ def audio_files(
         max_value=magnitude,
         duration=duration,
     )
+
     files = []
     file_begin_timestamps = (
         list(
@@ -75,6 +74,13 @@ def audio_files(
         if duration + inter_file_duration != 0
         else [date_begin] * nb_files
     )
+
+    datetime_format = (
+        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+        if date_begin.tzinfo is None
+        else TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED
+    )
+
     for index, begin_time in enumerate(file_begin_timestamps):
         time_str = begin_time.strftime(format=datetime_format)
         idx = 0

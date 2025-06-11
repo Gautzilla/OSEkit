@@ -9,8 +9,8 @@ from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
 from OSmOSE.config import (
-    TIMESTAMP_FORMAT_EXPORTED_FILES,
-    TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.event import Event
@@ -179,10 +179,10 @@ from OSmOSE.public_api.dataset import Dataset
                 "sample_rate": 48_000,
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00", tz="America/Chihuahua"),
-                "datetime_format": TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+                "datetime_format": TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
             },
             ["foo.wav", "cool/bar.wav"],
-            TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+            TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
             None,
             [
                 Event(
@@ -216,10 +216,10 @@ from OSmOSE.public_api.dataset import Dataset
                 "sample_rate": 48_000,
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00", tz="America/Chihuahua"),
-                "datetime_format": TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+                "datetime_format": TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
             },
             ["foo.wav", "cool/bar.wav"],
-            TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+            TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
             "Indian/Kerguelen",
             [
                 Event(
@@ -241,7 +241,9 @@ def test_dataset_build(
     expected_audio_events: list[Event],
 ) -> None:
     timestamp_format = (
-        TIMESTAMP_FORMAT_EXPORTED_FILES if timestamp_format is None else timestamp_format
+        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+        if timestamp_format is None
+        else timestamp_format
     )
 
     # add other files
@@ -425,7 +427,9 @@ def test_reshape(
     audio_files: pytest.fixture,
     analysis: Analysis,
 ) -> None:
-    dataset = Dataset(folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
+    dataset = Dataset(
+        folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+    )
     dataset.build()
     dataset.run_analysis(
         analysis=analysis,
@@ -444,7 +448,7 @@ def test_reshape(
     expected_ads_name = (
         analysis.name
         if analysis.name
-        else f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)}"
+        else f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)}"
     )
 
     # The new dataset should be added to the datasets property
@@ -561,7 +565,7 @@ def test_serialization(
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         instrument=instrument,
     )
     dataset.build()
@@ -930,7 +934,7 @@ def test_get_analysis_audiodataset(
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         instrument=instrument,
     )
     dataset.build()
@@ -1004,7 +1008,7 @@ def test_get_analysis_spectrodataset(
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         instrument=instrument,
     )
     dataset.build()
@@ -1036,11 +1040,12 @@ def test_get_analysis_spectrodataset(
 
 
 def test_edit_analysis_before_run(
-    tmp_path: pytest.fixture, audio_files: pytest.fixture,
+    tmp_path: pytest.fixture,
+    audio_files: pytest.fixture,
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         instrument=Instrument(end_to_end_db=150),
     )
 

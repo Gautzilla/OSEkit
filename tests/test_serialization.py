@@ -8,7 +8,7 @@ from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
@@ -108,7 +108,7 @@ def test_audio_data_serialization(
     sample_rate: float,
 ) -> None:
     af = [
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
+        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
         for f in tmp_path.glob("*.wav")
     ]
 
@@ -187,7 +187,7 @@ def test_audio_dataset_serialization(
 ) -> None:
     ads = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         data_duration=data_duration,
         name=name,
     )
@@ -520,7 +520,7 @@ def test_spectro_data_serialization(
     colormap: str | None,
 ) -> None:
     af = [
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
+        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
         for f in tmp_path.glob("*.wav")
     ]
 
@@ -557,7 +557,7 @@ def test_spectro_data_serialization(
     sd.write(tmp_path, link=True)
 
     sfs = [
-        SpectroFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
+        SpectroFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
         for file in tmp_path.glob("*.npz")
     ]
 
@@ -718,7 +718,7 @@ def test_spectro_dataset_serialization(
 ) -> None:
     ads = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         data_duration=data_duration,
         instrument=instrument,
     )
@@ -766,7 +766,7 @@ def test_spectro_dataset_serialization(
 
     sds3 = SpectroDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         data_duration=data_duration,
     )
 
