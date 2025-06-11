@@ -10,7 +10,10 @@ from pandas import Timedelta
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    TIMESTAMP_FORMATS_EXPORTED_FILES,
+)
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
@@ -122,22 +125,33 @@ def test_spectrogram_shape(
             ShortTimeFFT(hamming(1_024), 1_024, 48_000),
             id="nanosecond_precision_end",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            pd.Timestamp("2024-01-01 12:00:00.123+0200"),
+            ShortTimeFFT(hamming(512), 512, 1_024),
+            id="localized_spectro",
+        ),
     ],
     indirect=["audio_files"],
 )
 def test_spectro_parameters_in_npz_files(
     tmp_path: Path,
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     date_begin: pd.Timestamp,
     sft: ShortTimeFFT,
 ) -> None:
-    af = next(AudioFile(f, begin=date_begin) for f in tmp_path.glob("*.wav"))
+    afs, _ = audio_files
 
-    ad = AudioData.from_files([af])
+    ad = AudioData.from_files(afs)
     sd = SpectroData.from_audio_data(ad, sft)
     sd.write(tmp_path / "npz")
     file = tmp_path / "npz" / f"{sd}.npz"
-    sf = SpectroFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
+    sf = SpectroFile(file, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES)
 
     assert sf.begin == ad.begin
     assert sf.end == ad.end
@@ -437,6 +451,49 @@ def test_spectrogram_sx_dtype(
             1_024,
             nullcontext(),
             id="equal_audio_data",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00+0200"),
+                end=pd.Timestamp("2024-01-01 12:00:01+0200"),
+            ),
+            1_024,
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00+0200"),
+                end=pd.Timestamp("2024-01-01 12:00:01+0200"),
+            ),
+            1_024,
+            nullcontext(),
+            id="equal_localized_audio_data",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00+0200"),
+                end=pd.Timestamp("2024-01-01 12:00:01+0200"),
+            ),
+            1_024,
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00+0000"),
+                end=pd.Timestamp("2024-01-01 12:00:01+0000"),
+            ),
+            1_024,
+            pytest.raises(
+                ValueError,
+                match="The begin of the audio data doesn't match.",
+            ),
+            id="different_timezones",
         ),
         pytest.param(
             {
