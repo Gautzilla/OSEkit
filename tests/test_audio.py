@@ -13,6 +13,7 @@ from pandas import Timestamp
 
 import OSmOSE
 from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     resample_quality_settings,
 )
@@ -54,6 +55,15 @@ from OSmOSE.utils.audio_utils import generate_sample_audio
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             id="different_sample_rate",
+        ),
+        pytest.param(
+            {
+                "duration": 0.05,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            id="localized_audio_file",
         ),
     ],
     indirect=True,
@@ -342,6 +352,36 @@ def test_audio_file_read(
             generate_sample_audio(nb_files=1, nb_samples=10)[0][2:7],
             id="first_frame_included_last_frame_rounding_down",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=500_000,
+                tz="+0200",
+            ),
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=600_000,
+                tz="+0200",
+            ),
+            generate_sample_audio(nb_files=1, nb_samples=48_000)[0][24_000:28_800],
+            id="localized_file",
+        ),
     ],
     indirect=["audio_files"],
 )
@@ -440,6 +480,37 @@ def test_audio_item(
             pd.Timestamp("2024-01-01 10:00:01"),
             np.zeros(shape=48_000),
             id="out_of_range_is_zeros",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+                "series_type": "increase",
+            },
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=800_000,
+                tz="+0200",
+            ),
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=1,
+                microsecond=200_000,
+                tz="+0200",
+            ),
+            generate_sample_audio(nb_files=1, nb_samples=48_000 * 2)[0][38_400:57_600],
+            id="localized_files",
         ),
     ],
     indirect=["audio_files"],
@@ -921,6 +992,21 @@ def test_audio_dataset_from_folder(
             generate_sample_audio(nb_files=2, nb_samples=48_000),
             id="overlapping_files",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "inter_file_duration": -0.5,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+                "series_type": "repeat",
+            },
+            pd.Timestamp("2024-01-01 12:00:00+0200"),
+            pd.Timestamp("2024-01-01 12:00:02+0200"),
+            pd.Timedelta(seconds=1),
+            generate_sample_audio(nb_files=2, nb_samples=48_000),
+            id="localized_files",
+        ),
     ],
     indirect=["audio_files"],
 )
@@ -932,9 +1018,13 @@ def test_audio_dataset_from_files(
     duration: pd.Timedelta | None,
     expected_audio_data: list[np.ndarray],
 ) -> None:
+    strptime_format = (
+        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+        if (begin is None or begin.tz is None)
+        else TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED
+    )
     afs = [
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
-        for f in tmp_path.glob("*.wav")
+        AudioFile(f, strptime_format=strptime_format) for f in tmp_path.glob("*.wav")
     ]
     dataset = AudioDataset.from_files(
         afs,
@@ -1189,19 +1279,51 @@ def test_audio_dataset_from_folder_errors_warnings(
             generate_sample_audio(1, 48_000, dtype=np.float64),
             id="link_to_written_file",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            "DOUBLE",
+            False,
+            generate_sample_audio(1, 48_000, dtype=np.float64),
+            id="localized_written_file",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            "DOUBLE",
+            True,
+            generate_sample_audio(1, 48_000, dtype=np.float64),
+            id="link_to_localized_written_file",
+        ),
     ],
     indirect=["audio_files"],
 )
 def test_write_files(
     tmp_path: Path,
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     subtype: str,
     link: bool,
     expected_audio_data: list[np.ndarray],
 ) -> None:
+    begin = min(af.begin for af in audio_files[0])
+    strptime_format = (
+        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+        if (begin is None or begin.tz is None)
+        else TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED
+    )
     dataset = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+        strptime_format=strptime_format,
     )
     output_path = tmp_path / "output"
     dataset.write(output_path, subtype=subtype, link=link)

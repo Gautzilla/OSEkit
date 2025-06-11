@@ -5,7 +5,7 @@ import pytest
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+from OSmOSE.config import TIMESTAMP_FORMATS_EXPORTED_FILES
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.instrument import Instrument
@@ -332,7 +332,7 @@ def test_instrument_level_spectrum(
         [
             SpectroFile(
                 next((tmp_path / "npz").glob("*.npz")),
-                strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+                strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
             ),
         ],
     )
@@ -353,7 +353,7 @@ def test_instrument_level_spectrum(
         [
             AudioFile(
                 next((tmp_path / "audio").glob("*.wav")),
-                strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+                strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
             ),
         ],
         instrument=instrument,
