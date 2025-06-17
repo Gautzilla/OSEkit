@@ -1,6 +1,6 @@
 import pytest
 
-from OSmOSE.core_api.frequency_scale import ScalePart
+from OSmOSE.core_api.frequency_scale import Scale, ScalePart
 
 
 @pytest.mark.parametrize(
@@ -150,3 +150,121 @@ def test_frequency_scale_part_get_values(
     expected: list[int],
 ) -> None:
     assert scale_part.get_values(nb_points) == expected
+
+
+@pytest.mark.parametrize(
+    ("scale", "scale_length", "expected"),
+    [
+        pytest.param(
+            Scale(
+                parts=[
+                    ScalePart(
+                        p_min=0,
+                        p_max=1.0,
+                        f_min=0,
+                        f_max=3,
+                    ),
+                ],
+            ),
+            4,
+            [0, 1, 2, 3],
+            id="one_full_part",
+        ),
+        pytest.param(
+            Scale(
+                parts=[
+                    ScalePart(
+                        p_min=0,
+                        p_max=0.5,
+                        f_min=0,
+                        f_max=1,
+                    ),
+                    ScalePart(
+                        p_min=0.5,
+                        p_max=1.0,
+                        f_min=2,
+                        f_max=3,
+                    ),
+                ],
+            ),
+            4,
+            [0, 1, 2, 3],
+            id="even_length_cut_in_half",
+        ),
+        pytest.param(
+            Scale(
+                parts=[
+                    ScalePart(
+                        p_min=0,
+                        p_max=0.5,
+                        f_min=0,
+                        f_max=1,
+                    ),
+                    ScalePart(
+                        p_min=0.5,
+                        p_max=1.0,
+                        f_min=2,
+                        f_max=4,
+                    ),
+                ],
+            ),
+            5,
+            [0, 1, 2, 3, 4],
+            id="odd_length_cut_in_half",
+        ),
+        pytest.param(
+            Scale(
+                parts=[
+                    ScalePart(
+                        p_min=0,
+                        p_max=0.1,
+                        f_min=100,
+                        f_max=200,
+                    ),
+                    ScalePart(
+                        p_min=0.1,
+                        p_max=0.5,
+                        f_min=500,
+                        f_max=1_200,
+                    ),
+                    ScalePart(
+                        p_min=0.5,
+                        p_max=1.0,
+                        f_min=3_100,
+                        f_max=4_000,
+                    ),
+                ],
+            ),
+            20,
+            [
+                100,
+                200,
+                500,
+                600,
+                700,
+                800,
+                900,
+                1_000,
+                1_100,
+                1_200,
+                3_100,
+                3_200,
+                3_300,
+                3_400,
+                3_500,
+                3_600,
+                3_700,
+                3_800,
+                3_900,
+                4_000,
+            ],
+            id="non_consecutive_parts",
+        ),
+    ],
+)
+def test_frequency_scale_map(
+    scale: Scale,
+    scale_length: int,
+    expected: list[float],
+) -> None:
+    assert scale.map(scale_length) == expected

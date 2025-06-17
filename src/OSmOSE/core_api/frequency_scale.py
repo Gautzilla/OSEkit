@@ -35,3 +35,25 @@ class ScalePart:
 class Scale:
     def __init__(self, parts: list[ScalePart]):
         self.parts = parts
+
+    def map(self, original_scale_length: int) -> list[float]:
+        """Map a given scale to the custom scale defined by its ScaleParts.
+
+        Parameters
+        ----------
+        original_scale_length: int
+            Length of the original frequency scale.
+
+        Returns
+        -------
+        list[float]
+            Mapped frequency scale.
+            Each ScalePart from the Scale.parts attribute are concatenated
+            to form the returned scale.
+
+        """
+        return [
+            v
+            for scale in sorted(self.parts, key=lambda p: (p.p_min, p.p_max))
+            for v in scale.get_values(original_scale_length)
+        ]
