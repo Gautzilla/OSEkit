@@ -93,3 +93,60 @@ def test_frequency_scale_part_get_indexes(
     expected: list[int],
 ) -> None:
     assert scale_part.get_indexes(scale_length) == expected
+
+
+@pytest.mark.parametrize(
+    ("scale_part", "nb_points", "expected"),
+    [
+        pytest.param(
+            ScalePart(
+                p_min=0,
+                p_max=1.0,
+                f_min=0,
+                f_max=3,
+            ),
+            4,
+            [0, 1, 2, 3],
+            id="full_scale",
+        ),
+        pytest.param(
+            ScalePart(
+                p_min=0,
+                p_max=1.0,
+                f_min=100,
+                f_max=200,
+            ),
+            5,
+            [100, 125, 150, 175, 200],
+            id="full_scale_large_frequencies",
+        ),
+        pytest.param(
+            ScalePart(
+                p_min=0.0,
+                p_max=0.5,
+                f_min=100,
+                f_max=200,
+            ),
+            5,
+            [100, 200],
+            id="odd_first_half",
+        ),
+        pytest.param(
+            ScalePart(
+                p_min=0.5,
+                p_max=1.0,
+                f_min=200,
+                f_max=300,
+            ),
+            5,
+            [200, 250, 300],
+            id="odd_second_half",
+        ),
+    ],
+)
+def test_frequency_scale_part_get_values(
+    scale_part: ScalePart,
+    nb_points: int,
+    expected: list[int],
+) -> None:
+    assert scale_part.get_values(nb_points) == expected

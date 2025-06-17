@@ -26,6 +26,11 @@ class ScalePart:
         """Return the indexes of the present scale part in the full scale."""
         return int(self.p_min * scale_length), int(self.p_max * scale_length)
 
+    def get_values(self, scale_length: int) -> list[int]:
+        """Return the values of the present scale part in the full scale."""
+        start, stop = self.get_indexes(scale_length)
+        return list(map(round, np.linspace(self.f_min, self.f_max, stop - start)))
+
 
 class Scale:
     def __init__(self, parts: list[ScalePart]):
