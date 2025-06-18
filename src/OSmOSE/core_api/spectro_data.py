@@ -273,6 +273,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         folder: Path,
         ax: plt.Axes | None = None,
         sx: np.ndarray | None = None,
+        scale: Scale | None = None,
     ) -> None:
         """Export the spectrogram as a png image.
 
@@ -285,10 +286,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Defaulted as the SpectroData.get_default_ax Axes.
         sx: np.ndarray | None
             Spectrogram sx values. Will be computed if not provided.
+        scale: OSmOSE.core_api.frequecy_scale.Scale
+            Custom frequency scale to use for plotting the spectrogram.
 
         """
         super().create_directories(path=folder)
-        self.plot(ax, sx)
+        self.plot(ax=ax, sx=sx, scale=scale)
         plt.savefig(f"{folder / str(self)}", bbox_inches="tight", pad_inches=0)
         plt.close()
 
