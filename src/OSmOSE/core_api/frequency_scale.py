@@ -1,3 +1,14 @@
+"""Custom frequency scales for plotting spectrograms.
+
+The custom scale is formed from a list of ScaleParts, which assign a
+frequency range to a range on the scale.
+Provided ScaleParts should cover the whole scale (from 0% to 100%).
+
+Such Scale can then be passed to the SpectroData.plot() method for the
+spectrogram to be plotted on a custom frequency scale.
+
+"""
+
 from dataclasses import dataclass
 
 import numpy as np
@@ -35,7 +46,19 @@ class ScalePart:
 
 
 class Scale:
-    def __init__(self, parts: list[ScalePart]):
+    """Class that represent a custom frequency scale for plotting spectrograms.
+
+    The custom scale is formed from a list of ScaleParts, which assign a
+    frequency range to a range on the scale.
+    Provided ScaleParts should cover the whole scale (from 0% to 100%).
+
+    Such Scale can then be passed to the SpectroData.plot() method for the
+    spectrogram to be plotted on a custom frequency scale.
+
+    """
+
+    def __init__(self, parts: list[ScalePart]) -> None:
+        """Initialize a Scale object."""
         self.parts = parts
 
     def map(self, original_scale_length: int) -> list[float]:
@@ -100,7 +123,9 @@ class Scale:
         return [original_scale[i] for i in self.get_mapped_indexes(original_scale)]
 
     def rescale(
-        self, sx_matrix: np.ndarray, original_scale: np.ndarray | list
+        self,
+        sx_matrix: np.ndarray,
+        original_scale: np.ndarray | list,
     ) -> np.ndarray:
         """Rescale the given spectrum matrix according to the present scale.
 
