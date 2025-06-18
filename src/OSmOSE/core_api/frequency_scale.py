@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from OSmOSE.utils.core_utils import get_closest_value_index
+
 
 @dataclass
 class ScalePart:
@@ -56,4 +58,27 @@ class Scale:
             v
             for scale in sorted(self.parts, key=lambda p: (p.p_min, p.p_max))
             for v in scale.get_values(original_scale_length)
+        ]
+
+    def get_mapped_indexes(self, original_scale: list[float]) -> list[int]:
+        """Return the indexes of the present scale in the original scale.
+
+        The indexes are those of the closest value from the mapped values
+        in the original scale.
+
+        Parameters
+        ----------
+        original_scale: list[float]
+            Original scale from which the mapped scale is computed.
+
+        Returns
+        -------
+        list[int]
+            Indexes of the closest value from the mapped values in the
+            original scale.
+
+        """
+        mapped_scale = self.map(len(original_scale))
+        return [
+            get_closest_value_index(mapped, original_scale) for mapped in mapped_scale
         ]
