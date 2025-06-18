@@ -83,6 +83,22 @@ class Scale:
             get_closest_value_index(mapped, original_scale) for mapped in mapped_scale
         ]
 
+    def get_mapped_values(self, original_scale: list[float]) -> list[float]:
+        """Return the closest values of the mapped scale from the original scale.
+
+        Parameters
+        ----------
+        original_scale: list[float]
+            Original scale from which the mapped scale is computed.
+
+        Returns
+        -------
+        list[float]
+            Values from the original scale that are the closest to the mapped scale.
+
+        """
+        return [original_scale[i] for i in self.get_mapped_indexes(original_scale)]
+
     def rescale(
         self, sx_matrix: np.ndarray, original_scale: np.ndarray | list
     ) -> np.ndarray:

@@ -328,6 +328,62 @@ def test_frequency_scale_mapped_indexes(
 
 
 @pytest.mark.parametrize(
+    ("scale", "original_scale", "expected"),
+    [
+        pytest.param(
+            Scale(
+                parts=[
+                    ScalePart(p_min=0.0, p_max=1.0, f_min=0, f_max=5.0),
+                ],
+            ),
+            [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+            [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+            id="same_scale",
+        ),
+        pytest.param(
+            Scale(
+                parts=[
+                    ScalePart(p_min=0.0, p_max=0.5, f_min=0, f_max=2.0),
+                    ScalePart(p_min=0.5, p_max=1.0, f_min=3.0, f_max=5.0),
+                ],
+            ),
+            [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+            [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+            id="same_scale_in_two_parts",
+        ),
+        pytest.param(
+            Scale(
+                parts=[
+                    ScalePart(p_min=0.0, p_max=0.8, f_min=0, f_max=1.0),
+                    ScalePart(p_min=0.8, p_max=1.0, f_min=8.0, f_max=9.0),
+                ],
+            ),
+            [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
+            [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 8.0, 9.0],
+            id="two_different_parts",
+        ),
+        pytest.param(
+            Scale(
+                parts=[
+                    ScalePart(p_min=0.0, p_max=0.8, f_min=100, f_max=110.0),
+                    ScalePart(p_min=0.8, p_max=1.0, f_min=180.0, f_max=190.0),
+                ],
+            ),
+            [100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 170.0, 180.0, 190.0],
+            [100.0, 100.0, 100.0, 100.0, 110.0, 110.0, 110.0, 110.0, 180.0, 190.0],
+            id="different_frequencies_same_indexes",
+        ),
+    ],
+)
+def test_frequency_scale_mapped_values(
+    scale: Scale,
+    original_scale: list[float],
+    expected: list[int],
+) -> None:
+    assert scale.get_mapped_values(original_scale=original_scale) == expected
+
+
+@pytest.mark.parametrize(
     ("input_matrix", "original_scale", "scale", "expected_matrix"),
     [
         pytest.param(
@@ -360,7 +416,7 @@ def test_frequency_scale_mapped_indexes(
                     ScalePart(0.25, 0.5, 2.0, 3.0),
                     ScalePart(0.5, 0.75, 0.0, 1.0),
                     ScalePart(0.75, 1.0, 1.0, 2.0),
-                ]
+                ],
             ),
             np.array([[4, 40, 400], [3, 30, 300], [1, 10, 100], [2, 20, 200]]),
             id="four_parts",
