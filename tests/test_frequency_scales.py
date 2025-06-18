@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from OSmOSE.core_api.frequency_scale import Scale, ScalePart
@@ -324,3 +325,53 @@ def test_frequency_scale_mapped_indexes(
     expected: list[int],
 ) -> None:
     assert scale.get_mapped_indexes(original_scale=original_scale) == expected
+
+
+@pytest.mark.parametrize(
+    ("input_matrix", "original_scale", "scale", "expected_matrix"),
+    [
+        pytest.param(
+            np.array([[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400]]),
+            [0.0, 1.0, 2.0, 3.0],
+            Scale([ScalePart(0.0, 1.0, 0.0, 3.0)]),
+            np.array([[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400]]),
+            id="same_scale",
+        ),
+        pytest.param(
+            np.array([[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400]]),
+            [0.0, 1.0, 2.0, 3.0],
+            Scale([ScalePart(0.0, 0.5, 0.0, 1.0), ScalePart(0.5, 1.0, 0.0, 1.0)]),
+            np.array([[1, 10, 100], [2, 20, 200], [1, 10, 100], [2, 20, 200]]),
+            id="repeat_first_half",
+        ),
+        pytest.param(
+            np.array([[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400]]),
+            [0.0, 1.0, 2.0, 3.0],
+            Scale([ScalePart(0.0, 0.5, 2.0, 3.0), ScalePart(0.5, 1.0, 0.0, 1.0)]),
+            np.array([[3, 30, 300], [4, 40, 400], [1, 10, 100], [2, 20, 200]]),
+            id="switch_halves",
+        ),
+        pytest.param(
+            np.array([[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400]]),
+            [0.0, 1.0, 2.0, 3.0],
+            Scale(
+                [
+                    ScalePart(0.0, 0.25, 3.0, 4.0),
+                    ScalePart(0.25, 0.5, 2.0, 3.0),
+                    ScalePart(0.5, 0.75, 0.0, 1.0),
+                    ScalePart(0.75, 1.0, 1.0, 2.0),
+                ]
+            ),
+            np.array([[4, 40, 400], [3, 30, 300], [1, 10, 100], [2, 20, 200]]),
+            id="four_parts",
+        ),
+    ],
+)
+def test_frequency_scale_rescale(
+    input_matrix: np.ndarray,
+    original_scale: np.ndarray,
+    scale: Scale,
+    expected_matrix: np.ndarray,
+) -> None:
+    scaled_matrix = scale.rescale(input_matrix, original_scale)
+    assert np.array_equal(scaled_matrix, expected_matrix)

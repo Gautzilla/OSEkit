@@ -82,3 +82,28 @@ class Scale:
         return [
             get_closest_value_index(mapped, original_scale) for mapped in mapped_scale
         ]
+
+    def rescale(
+        self, sx_matrix: np.ndarray, original_scale: np.ndarray | list
+    ) -> np.ndarray:
+        """Rescale the given spectrum matrix according to the present scale.
+
+        Parameters
+        ----------
+        sx_matrix: np.ndarray
+            Spectrum matrix.
+        original_scale: np.ndarray
+            Original frequency axis of the spectrum matrix.
+
+        Returns
+        -------
+        np.ndarray
+            Spectrum matrix mapped on the present scale.
+
+        """
+        if type(original_scale) is np.ndarray:
+            original_scale = original_scale.tolist()
+
+        new_scale_indexes = self.get_mapped_indexes(original_scale)
+
+        return sx_matrix[new_scale_indexes]

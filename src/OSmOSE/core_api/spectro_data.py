@@ -18,6 +18,7 @@ from OSmOSE.config import (
 )
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.base_data import BaseData
+from OSmOSE.core_api.frequency_scale import Scale
 from OSmOSE.core_api.spectro_file import SpectroFile
 from OSmOSE.core_api.spectro_item import SpectroItem
 
@@ -205,7 +206,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         return sx
 
-    def plot(self, ax: plt.Axes | None = None, sx: np.ndarray | None = None) -> None:
+    def plot(
+        self,
+        ax: plt.Axes | None = None,
+        sx: np.ndarray | None = None,
+        scale: Scale | None = None,
+    ) -> None:
         """Plot the spectrogram on a specific Axes.
 
         Parameters
@@ -215,6 +221,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Defaulted as the SpectroData.get_default_ax Axes.
         sx: np.ndarray | None
             Spectrogram sx values. Will be computed if not provided.
+        scale: OSmOSE.core_api.frequecy_scale.Scale
+            Custom frequency scale to use for plotting the spectrogram.
 
         """
         ax = ax if ax is not None else SpectroData.get_default_ax()
@@ -224,6 +232,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
+
+        sx = sx if scale is None else scale.rescale(sx, freq)
 
         ax.pcolormesh(
             time,
