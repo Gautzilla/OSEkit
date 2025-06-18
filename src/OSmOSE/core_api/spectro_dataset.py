@@ -13,6 +13,7 @@ import numpy as np
 from scipy.signal import ShortTimeFFT
 
 from OSmOSE.core_api.base_dataset import BaseDataset
+from OSmOSE.core_api.frequency_scale import Scale
 from OSmOSE.core_api.json_serializer import deserialize_json
 from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_file import SpectroFile
@@ -91,6 +92,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         folder: Path,
         first: int = 0,
         last: int | None = None,
+        scale: Scale | None = None,
     ) -> None:
         """Export all spectrogram data as png images in the specified folder.
 
@@ -102,12 +104,14 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Index of the first SpectroData object to export.
         last: int|None
             Index after the last SpectroData object to export.
+        scale: OSmOSE.core_api.frequecy_scale.Scale
+            Custom frequency scale to use for plotting the spectrogram.
 
 
         """
         last = len(self.data) if last is None else last
         for data in self.data[first:last]:
-            data.save_spectrogram(folder)
+            data.save_spectrogram(folder, scale=scale)
 
     def save_all(
         self,
@@ -116,6 +120,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         link: bool = False,
         first: int = 0,
         last: int | None = None,
+        scale: Scale | None = None,
     ) -> None:
         """Export both Sx matrices as npz files and spectrograms for each data.
 
@@ -133,13 +138,15 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Index of the first SpectroData object to export.
         last: int|None
             Index after the last SpectroData object to export.
+        scale: OSmOSE.core_api.frequecy_scale.Scale
+            Custom frequency scale to use for plotting the spectrogram.
 
         """
         last = len(self.data) if last is None else last
         for data in self.data[first:last]:
             sx = data.get_value()
             data.write(folder=matrix_folder, sx=sx, link=link)
-            data.save_spectrogram(folder=spectrogram_folder, sx=sx)
+            data.save_spectrogram(folder=spectrogram_folder, sx=sx, scale=scale)
 
     def link_audio_dataset(
         self,
