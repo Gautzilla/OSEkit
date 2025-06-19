@@ -40,9 +40,11 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         name: str | None = None,
         suffix: str = "",
         folder: Path | None = None,
+        scale: Scale | None = None,
     ) -> None:
         """Initialize a SpectroDataset."""
         super().__init__(data=data, name=name, suffix=suffix, folder=folder)
+        self.scale = scale
 
     @property
     def fft(self) -> ShortTimeFFT:
@@ -92,7 +94,6 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         folder: Path,
         first: int = 0,
         last: int | None = None,
-        scale: Scale | None = None,
     ) -> None:
         """Export all spectrogram data as png images in the specified folder.
 
@@ -104,14 +105,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Index of the first SpectroData object to export.
         last: int|None
             Index after the last SpectroData object to export.
-        scale: OSmOSE.core_api.frequecy_scale.Scale
-            Custom frequency scale to use for plotting the spectrogram.
 
 
         """
         last = len(self.data) if last is None else last
         for data in self.data[first:last]:
-            data.save_spectrogram(folder, scale=scale)
+            data.save_spectrogram(folder, scale=self.scale)
 
     def save_all(
         self,
@@ -120,7 +119,6 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         link: bool = False,
         first: int = 0,
         last: int | None = None,
-        scale: Scale | None = None,
     ) -> None:
         """Export both Sx matrices as npz files and spectrograms for each data.
 
@@ -138,15 +136,13 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Index of the first SpectroData object to export.
         last: int|None
             Index after the last SpectroData object to export.
-        scale: OSmOSE.core_api.frequecy_scale.Scale
-            Custom frequency scale to use for plotting the spectrogram.
 
         """
         last = len(self.data) if last is None else last
         for data in self.data[first:last]:
             sx = data.get_value()
             data.write(folder=matrix_folder, sx=sx, link=link)
-            data.save_spectrogram(folder=spectrogram_folder, sx=sx, scale=scale)
+            data.save_spectrogram(folder=spectrogram_folder, sx=sx, scale=self.scale)
 
     def link_audio_dataset(
         self,
@@ -241,6 +237,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         return {
             "data": spectro_data_dict,
             "sft": sft_dict,
+            "scale": self.scale.to_dict_value() if self.scale is not None else None,
             "name": self._name,
             "suffix": self.suffix,
             "folder": str(self.folder),
@@ -285,6 +282,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             name=dictionary["name"],
             suffix=dictionary["suffix"],
             folder=Path(dictionary["folder"]),
+            scale=Scale.from_dict_value(dictionary["scale"]),
         )
 
     @classmethod
@@ -364,6 +362,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         fft: ShortTimeFFT,
         name: str | None = None,
         colormap: str | None = None,
+        scale: Scale | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from a BaseDataset object."""
         return cls(
@@ -372,6 +371,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
                 for data in base_dataset.data
             ],
             name=name,
+            scale=scale,
         )
 
     @classmethod
@@ -382,6 +382,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         name: str | None = None,
         colormap: str | None = None,
         v_lim: tuple[float, float] | None = None,
+        scale: Scale | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from an AudioDataset object.
 
@@ -398,6 +399,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
                 for d in audio_dataset.data
             ],
             name=name,
+            scale=scale,
         )
 
     @classmethod
