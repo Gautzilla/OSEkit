@@ -431,3 +431,187 @@ def test_frequency_scale_rescale(
 ) -> None:
     scaled_matrix = scale.rescale(input_matrix, original_scale)
     assert np.array_equal(scaled_matrix, expected_matrix)
+
+
+@pytest.mark.parametrize(
+    ("part1", "part2", "expected"),
+    [
+        pytest.param(
+            ScalePart(0.0, 1.0, 100, 500),
+            ScalePart(0.0, 1.0, 100, 500),
+            True,
+            id="same_scale",
+        ),
+        pytest.param(
+            ScalePart(0.0, 1.0, 100, 500),
+            ScalePart(0.0, 1.0, 100.0, 500.0),
+            True,
+            id="int_and_float_frequencies",
+        ),
+        pytest.param(
+            ScalePart(0, 1, 100.0, 500.0),
+            ScalePart(0.0, 1.0, 100.0, 500.0),
+            True,
+            id="int_and_float_p",
+        ),
+        pytest.param(
+            ScalePart(0.05, 1.0, 100.0, 500.0),
+            ScalePart(0.0, 1.0, 100.0, 500.0),
+            False,
+            id="different_p_min",
+        ),
+        pytest.param(
+            ScalePart(0.0, 0.5, 100.0, 500.0),
+            ScalePart(0.0, 1.0, 100.0, 500.0),
+            False,
+            id="different_p_max",
+        ),
+        pytest.param(
+            ScalePart(0.0, 0.1, 150.0, 500.0),
+            ScalePart(0.0, 1.0, 100.0, 500.0),
+            False,
+            id="different_f_min",
+        ),
+        pytest.param(
+            ScalePart(0.0, 0.1, 100.0, 5000.0),
+            ScalePart(0.0, 1.0, 100.0, 500.0),
+            False,
+            id="different_f_max",
+        ),
+        pytest.param(
+            ScalePart(0.5, 0.6, 1000.0, 5000.0),
+            ScalePart(0.0, 1.0, 100.0, 500.0),
+            False,
+            id="all_different",
+        ),
+    ],
+)
+def test_frequency_scale_part_equality(
+    part1: ScalePart,
+    part2: ScalePart,
+    expected: bool,
+) -> None:
+    assert (part1 == part2) == expected
+    assert (part2 == part1) == expected
+
+
+@pytest.mark.parametrize(
+    ("scale1", "scale2", "expected"),
+    [
+        pytest.param(
+            Scale(
+                [ScalePart(0.0, 1.0, 0.0, 1.0)],
+            ),
+            Scale(
+                [ScalePart(0.0, 1.0, 0.0, 1.0)],
+            ),
+            True,
+            id="same_scale_with_one_part",
+        ),
+        pytest.param(
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
+                    ScalePart(0.5, 1.0, 1.0, 2.0),
+                ],
+            ),
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
+                    ScalePart(0.5, 1.0, 1.0, 2.0),
+                ],
+            ),
+            True,
+            id="same_scale_with_two_parts",
+        ),
+        pytest.param(
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
+                    ScalePart(0.5, 1.0, 1.0, 2.0),
+                ],
+            ),
+            Scale(
+                [
+                    ScalePart(0.5, 1.0, 1.0, 2.0),
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
+                ],
+            ),
+            True,
+            id="order_doesnt_matter",
+        ),
+        pytest.param(
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
+                    ScalePart(0.5, 1.0, 10.0, 20.0),
+                ],
+            ),
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
+                    ScalePart(0.5, 1.0, 1.0, 2.0),
+                ],
+            ),
+            False,
+            id="one_different_part",
+        ),
+        pytest.param(
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
+                    ScalePart(0.5, 1.0, 10.0, 20.0),
+                ],
+            ),
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
+                    ScalePart(0.5, 0.75, 1.0, 2.0),
+                    ScalePart(0.75, 1.0, 2.0, 3.0),
+                ],
+            ),
+            False,
+            id="different_part_count",
+        ),
+    ],
+)
+def test_frequency_scale_equality(scale1: Scale, scale2: Scale, expected: bool) -> None:
+    assert (scale1 == scale2) == expected
+    assert (scale2 == scale1) == expected
+
+
+@pytest.mark.parametrize(
+    "scale",
+    [
+        pytest.param(
+            Scale(
+                [
+                    ScalePart(0.0, 1.0, 0.0, 1.0),
+                ],
+            ),
+            id="simple_scale",
+        ),
+        pytest.param(
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
+                    ScalePart(0.5, 0.75, 1.0, 2.0),
+                    ScalePart(0.75, 1.0, 2.0, 3.0),
+                ],
+            ),
+            id="three_ordered_parts",
+        ),
+        pytest.param(
+            Scale(
+                [
+                    ScalePart(0.75, 1.0, 2.0, 3.0),
+                    ScalePart(0.5, 0.75, 1.0, 2.0),
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
+                ],
+            ),
+            id="three_unordered_parts",
+        ),
+    ],
+)
+def test_frequency_scale_serialization(scale: Scale) -> None:
+    assert Scale.from_dict_value(scale.to_dict_value()) == scale

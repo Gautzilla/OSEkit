@@ -9,6 +9,8 @@ spectrogram to be plotted on a custom frequency scale.
 
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 import numpy as np
@@ -44,6 +46,17 @@ class ScalePart:
         start, stop = self.get_indexes(scale_length)
         return list(map(round, np.linspace(self.f_min, self.f_max, stop - start)))
 
+    def __eq__(self, other: any) -> bool:
+        """Overwrite eq dunder."""
+        if type(other) is not ScalePart:
+            return False
+        return (
+            self.p_min == other.p_min
+            and self.p_max == other.p_max
+            and self.f_min == other.f_min
+            and self.f_max == other.f_max
+        )
+
 
 class Scale:
     """Class that represent a custom frequency scale for plotting spectrograms.
@@ -59,7 +72,7 @@ class Scale:
 
     def __init__(self, parts: list[ScalePart]) -> None:
         """Initialize a Scale object."""
-        self.parts = parts
+        self.parts = sorted(parts, key=lambda p: (p.p_min, p.p_max))
 
     def map(self, original_scale_length: int) -> list[float]:
         """Map a given scale to the custom scale defined by its ScaleParts.
@@ -78,9 +91,7 @@ class Scale:
 
         """
         return [
-            v
-            for scale in sorted(self.parts, key=lambda p: (p.p_min, p.p_max))
-            for v in scale.get_values(original_scale_length)
+            v for scale in self.parts for v in scale.get_values(original_scale_length)
         ]
 
     def get_mapped_indexes(self, original_scale: list[float]) -> list[int]:
@@ -148,3 +159,18 @@ class Scale:
         new_scale_indexes = self.get_mapped_indexes(original_scale)
 
         return sx_matrix[new_scale_indexes]
+
+    def to_dict_value(self) -> list[list]:
+        """Serialize a Scale to a dictionary entry."""
+        return [[part.p_min, part.p_max, part.f_min, part.f_max] for part in self.parts]
+
+    @classmethod
+    def from_dict_value(cls, dict_value: list[list]) -> Scale:
+        """Deserialize a Scale from a dictionary entry."""
+        return cls([ScalePart(*scale) for scale in dict_value])
+
+    def __eq__(self, other: any) -> bool:
+        """Overwrite eq dunder."""
+        if type(other) is not Scale:
+            return False
+        return self.parts == other.parts
