@@ -277,12 +277,15 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             )
             for name, params in dictionary["data"].items()
         ]
+        scale = dictionary["scale"]
+        if dictionary["scale"] is not None:
+            scale = Scale.from_dict_value(scale)
         return cls(
             data=sd,
             name=dictionary["name"],
             suffix=dictionary["suffix"],
             folder=Path(dictionary["folder"]),
-            scale=Scale.from_dict_value(dictionary["scale"]),
+            scale=scale,
         )
 
     @classmethod
