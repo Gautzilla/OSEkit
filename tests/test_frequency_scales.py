@@ -29,6 +29,18 @@ from OSmOSE.core_api.frequency_scale import Scale, ScalePart
             [10, 10, 11, 11, 12, 12],
             id="float_frequencies_are_rounded",
         ),
+        pytest.param(
+            ScalePart(
+                p_min=0,
+                p_max=1.0,
+                f_min=1.0,
+                f_max=10.0,
+                scale_type="log",
+            ),
+            10,
+            [1, 1, 2, 2, 3, 4, 5, 6, 8, 10],
+            id="logarithmic_scale",
+        ),
     ],
 )
 def test_frequency_scale_part_get_frequencies(
@@ -142,6 +154,18 @@ def test_frequency_scale_part_get_indexes(
             5,
             [200, 250, 300],
             id="odd_second_half",
+        ),
+        pytest.param(
+            ScalePart(
+                p_min=0,
+                p_max=0.5,
+                f_min=100,
+                f_max=200,
+                scale_type="log",
+            ),
+            10,
+            [100, 119, 141, 168, 200],
+            id="logarithmic_scale",
         ),
     ],
 )
@@ -260,6 +284,52 @@ def test_frequency_scale_part_get_values(
                 4_000,
             ],
             id="non_consecutive_parts",
+        ),
+        pytest.param(
+            Scale(
+                parts=[
+                    ScalePart(
+                        p_min=0,
+                        p_max=0.5,
+                        f_min=1,
+                        f_max=100,
+                        scale_type="log",
+                    ),
+                    ScalePart(
+                        p_min=0.5,
+                        p_max=1.0,
+                        f_min=1000,
+                        f_max=5000,
+                        scale_type="log",
+                    ),
+                ],
+            ),
+            10,
+            [1, 3, 10, 32, 100, 1000, 1495, 2236, 3344, 5000],
+            id="logarithmic_scale",
+        ),
+        pytest.param(
+            Scale(
+                parts=[
+                    ScalePart(
+                        p_min=0,
+                        p_max=0.5,
+                        f_min=1,
+                        f_max=100,
+                        scale_type="log",
+                    ),
+                    ScalePart(
+                        p_min=0.5,
+                        p_max=1.0,
+                        f_min=1000,
+                        f_max=5000,
+                        scale_type="lin",
+                    ),
+                ],
+            ),
+            10,
+            [1, 3, 10, 32, 100, 1000, 2000, 3000, 4000, 5000],
+            id="scale_type_mix",
         ),
     ],
 )
@@ -443,6 +513,12 @@ def test_frequency_scale_rescale(
             id="same_scale",
         ),
         pytest.param(
+            ScalePart(0.0, 1.0, 100, 500, scale_type="log"),
+            ScalePart(0.0, 1.0, 100, 500, scale_type="log"),
+            True,
+            id="same_log_scale",
+        ),
+        pytest.param(
             ScalePart(0.0, 1.0, 100, 500),
             ScalePart(0.0, 1.0, 100.0, 500.0),
             True,
@@ -480,9 +556,15 @@ def test_frequency_scale_rescale(
         ),
         pytest.param(
             ScalePart(0.5, 0.6, 1000.0, 5000.0),
-            ScalePart(0.0, 1.0, 100.0, 500.0),
+            ScalePart(0.0, 1.0, 100.0, 500.0, scale_type="log"),
             False,
             id="all_different",
+        ),
+        pytest.param(
+            ScalePart(0.0, 1.0, 100, 500),
+            ScalePart(0.0, 1.0, 100, 500, scale_type="log"),
+            False,
+            id="different_type",
         ),
     ],
 )
@@ -560,6 +642,22 @@ def test_frequency_scale_part_equality(
             Scale(
                 [
                     ScalePart(0.0, 0.5, 0.0, 1.0),
+                    ScalePart(0.5, 1.0, 1.0, 2.0),
+                ],
+            ),
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 0.0, 1.0, scale_type="log"),
+                    ScalePart(0.5, 1.0, 1.0, 2.0),
+                ],
+            ),
+            False,
+            id="one_different_type",
+        ),
+        pytest.param(
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 0.0, 1.0),
                     ScalePart(0.5, 1.0, 10.0, 20.0),
                 ],
             ),
@@ -610,6 +708,14 @@ def test_frequency_scale_equality(scale1: Scale, scale2: Scale, expected: bool) 
                 ],
             ),
             id="three_unordered_parts",
+        ),
+        pytest.param(
+            Scale(
+                [
+                    ScalePart(0.0, 1.0, 0.0, 1.0, scale_type="log"),
+                ],
+            ),
+            id="log_scale",
         ),
     ],
 )

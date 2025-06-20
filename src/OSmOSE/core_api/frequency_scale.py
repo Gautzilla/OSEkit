@@ -71,6 +71,10 @@ class ScalePart:
         start, stop = self.get_indexes(scale_length)
         return list(map(round, self.scale_lambda(self.f_min, self.f_max, stop - start)))
 
+    def to_dict_value(self) -> tuple[float, float, float, float, str]:
+        """Serialize a ScalePart to a dictionary entry."""
+        return self.p_min, self.p_max, self.f_min, self.f_max, self.scale_type
+
     def __eq__(self, other: any) -> bool:
         """Overwrite eq dunder."""
         if type(other) is not ScalePart:
@@ -195,9 +199,9 @@ class Scale:
 
         return sx_matrix[new_scale_indexes]
 
-    def to_dict_value(self) -> list[list]:
+    def to_dict_value(self) -> list[tuple[float, float, float, float, str]]:
         """Serialize a Scale to a dictionary entry."""
-        return [[part.p_min, part.p_max, part.f_min, part.f_max] for part in self.parts]
+        return [part.to_dict_value() for part in self.parts]
 
     @classmethod
     def from_dict_value(cls, dict_value: list[list]) -> Scale:
