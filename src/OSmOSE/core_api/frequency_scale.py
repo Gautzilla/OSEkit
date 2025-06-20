@@ -27,16 +27,39 @@ class ScalePart:
     p_max (in % of the axis), representing f_max
     """
 
-    def __init__(self, p_min: float, p_max: float, f_min: float, f_max: float, type: Literal["lin","log"] = "lin"):
+    def __init__(
+        self,
+        p_min: float,
+        p_max: float,
+        f_min: float,
+        f_max: float,
+        scale_type: Literal["lin", "log"] = "lin",
+    ) -> None:
+        """Initialize a ScalePart.
+
+        Parameters
+        ----------
+        p_min: float
+            Position (in percent) of the bottom of the scale part on the full scale.
+        p_max: float
+            Position (in percent) of the top of the scale part on the full scale.
+        f_min: float
+            Frequency corresponding to the bottom of the scale part.
+        f_max: float
+            Frequency corresponding to the top of the scale part.
+        scale_type: Literal["lin", "log"]
+            Type of the scale, either linear or logarithmic.
+
+        """
         self.p_min = p_min
         self.p_max = p_max
         self.f_min = f_min
         self.f_max = f_max
-        self.type: Literal["lin","log"] = "lin"
+        self.scale_type: Literal["lin", "log"] = scale_type
 
     def get_frequencies(self, nb_points: int) -> list[int]:
         """Return the frequency points of the present scale part."""
-        space = np.linspace(self.f_min, self.f_max, nb_points) if self.type == "lin" else np.logspace(self.f_min, self.f_max, nb_points)
+        space = self.scale_lambda(self.f_min, self.f_max, nb_points)
         return list(map(round, space))
 
     def get_indexes(self, scale_length: int) -> tuple[int, int]:
@@ -46,7 +69,7 @@ class ScalePart:
     def get_values(self, scale_length: int) -> list[int]:
         """Return the values of the present scale part."""
         start, stop = self.get_indexes(scale_length)
-        return list(map(round, np.linspace(self.f_min, self.f_max, stop - start)))
+        return list(map(round, self.scale_lambda(self.f_min, self.f_max, stop - start)))
 
     def __eq__(self, other: any) -> bool:
         """Overwrite eq dunder."""
@@ -57,6 +80,16 @@ class ScalePart:
             and self.p_max == other.p_max
             and self.f_min == other.f_min
             and self.f_max == other.f_max
+            and self.scale_type == other.scale_type
+        )
+
+    @property
+    def scale_lambda(self) -> callable:
+        """Lambda function used to generate either a linear or logarithmic scale."""
+        return lambda start, stop, steps: (
+            np.linspace(start, stop, steps)
+            if self.scale_type == "lin"
+            else np.geomspace(start, stop, steps)
         )
 
 
