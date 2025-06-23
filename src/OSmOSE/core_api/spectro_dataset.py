@@ -116,6 +116,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def write_welch(
         self,
         folder: Path,
+        first: int = 0,
+        last: int | None = None,
         nperseg: int | None = None,
         detrend: str | callable | False = "constant",
         return_onesided: bool = True,
@@ -125,7 +127,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         folder.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
         timestamps = []
         pxs = []
-        for data in self.data:
+        for data in self.data[first:last]:
             timestamps.append(f"{data.begin!s}_{data.end!s}")
             pxs.append(
                 data.get_welch(
@@ -134,10 +136,10 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
                     return_onesided=return_onesided,
                     scaling=scaling,
                     average=average,
-                )
+                ),
             )
         np.savez(
-            file=folder / f"{self}.npz",
+            file=folder / f"{self.data[first]}.npz",
             timestamps=timestamps,
             pxs=pxs,
             freq=self.fft.f,
