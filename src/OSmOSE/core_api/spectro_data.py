@@ -258,6 +258,57 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         return sx
 
+    def write_welch(
+        self,
+        folder: Path,
+        px: np.ndarray | None = None,
+        nperseg: int | None = None,
+        detrend: str | callable | False = "constant",
+        return_onesided: bool = True,
+        scaling: Literal["density", "spectrum"] = "density",
+        average: Literal["mean", "median"] = "mean",
+    ) -> None:
+        """Write the psd (welch) of the SpectroData to a npz file.
+
+        Parameters
+        ----------
+        folder: pathlib.Path
+            Folder in which to write the Spectro file.
+        px: np.ndarray | None
+            Welch px values. Will be computed if not provided.
+        nperseg: int|None
+            Length of each segment. Defaults to None, but if window is str or tuple, is set to 256, and if window is array_like, is set to the length of the window.
+        detrend: str | callable | False
+            Specifies how to detrend each segment. If detrend is a string, it is passed as the type argument to the detrend function. If it is a function, it takes a segment and returns a detrended segment. If detrend is False, no detrending is done. Defaults to ‘constant’.
+        return_onesided: bool
+            If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned.
+        scaling: Literal["density", "spectrum"]
+            Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the squared magnitude spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
+        average: Literal["mean", "median"]
+            Method to use when averaging periodograms. Defaults to ‘mean’.
+
+        """
+        super().create_directories(path=folder)
+        px = (
+            self.get_welch(
+                nperseg=nperseg,
+                detrend=detrend,
+                return_onesided=return_onesided,
+                scaling=scaling,
+                average=average,
+            )
+            if px is None
+            else px
+        )
+        freq = self.fft.f
+        timestamps = (str(t) for t in (self.begin, self.end))
+        np.savez(
+            file=folder / f"{self}.npz",
+            timestamps="_".join(timestamps),
+            freq=freq,
+            px=px,
+        )
+
     def plot(
         self,
         ax: plt.Axes | None = None,
