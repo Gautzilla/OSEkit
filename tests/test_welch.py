@@ -53,12 +53,15 @@ def test_welch_level(
     ad = AudioData.from_files(files=afs, instrument=instrument)
     sd = SpectroData.from_audio_data(data=ad, fft=sft)
 
+    ref = 1 if instrument is None else instrument.P_REF
+
     welch = sd.get_welch()
-    welch_db = 10 * np.log10(welch / (10**-12))
+    welch_db = 10 * np.log10(welch / (ref**2))
     assert welch.shape == sft.f.shape
 
-    th_psd_level = -10 * np.log10(ad.sample_rate / 2) + (
-        instrument.end_to_end_db if instrument is not None else 0
-    )
-    db_threshold = 1  # 1 dB accuracy from the theoretical level
+    th_psd_level = -10 * np.log10(ad.sample_rate / 2)
+    if instrument is not None:
+        th_psd_level += instrument.end_to_end_db
+
+    db_threshold = 0.1  # 1 dB accuracy from the theoretical level
     assert abs(np.median(welch_db) - th_psd_level) < db_threshold
