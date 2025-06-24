@@ -80,7 +80,7 @@ def generate_sample_audio(
         )
     if series_type == "noise":
         generator = np.random.default_rng(seed=1)
-        sig = generator.normal(0., 1., size=nb_samples)
+        sig = generator.normal(0.0, 1.0, size=nb_samples)
         return np.split(
             sig,
             nb_files,
