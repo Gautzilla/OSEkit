@@ -1,5 +1,5 @@
-Core API Usage
---------------
+Usage
+-----
 
 .. _coreapi_usage:
 
@@ -22,6 +22,9 @@ Such begin timestamp can either be specified (as a :class:`pandas.Timestamp` ins
 
 Audio Data
 ^^^^^^^^^^
+
+Design
+""""""
 
 The :class:`OSmOSE.core_api.audio_data.AudioData` class represent a chunk of audio taken between two specific timestamps from one or more `AudioFile` instances.
 
@@ -98,3 +101,264 @@ Item 4
 	Is gap                           NO
 """
 
+Reading data
+""""""""""""
+
+The :meth:`OSmOSE.core_api.audio_data.AudioData.get_value` method returns a `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ that contains the wav values of the audio data.
+
+The data is fetched seamlessly on-demand from the audio file(s). The opening/closing of the audio files is optimized thanks to a :class:`OSmOSE.core_api.audio_file_manager.AudioFileManager` instance.
+
+Eventual time gap between audio items are filled with ``0.`` values.
+
+
+Calibration
+"""""""""""
+
+.. _instrument_calibration:
+
+The :class:`OSmOSE.core_api.instrument.Instrument` class can be used to provide calibration info to your audio data.
+This can be used to convert raw WAV data to the recorded acoustic pressure.
+
+An ``Instrument`` instance can be attached to an ``AudioData``. Then, the :meth:`OSmOSE.core_api.audio_data.AudioData.get_value_calibrated` method
+allows for retrieving the data in the shape of the recorded acoustic pressure.
+
+.. code-block:: python
+
+    from OSmOSE.core_api.instrument import Instrument
+    from OSmOSE.core_api.audio_data import AudioData
+    import numpy as np
+
+    instrument = Instrument(end_to_end_db = 150) # The raw 1. WAV value equals 150 dB SPL re 1 uPa
+    ad = AudioData(..., instrument=Instrument)
+
+    p = ad.get_value_calibrated()
+    spl = 20*np.log10(p/instrument.P_REF) # P_REF is 1 uPa by default
+
+
+Resampling
+""""""""""
+
+``AudioData`` can be resampled just by modifying the :attr:`OSmOSE.core_api.audio_data.AudioData.sample_rate` field.
+
+Modifying the sample rate will not access the data, but the data will be resampled on the fly when it is requested:
+
+.. code-block:: python
+
+    from OSmOSE.core_api.audio_data import AudioData
+
+    ad = AudioData(...)
+    ad.sample_rate = 48_000 # Resample the signal at 48 kHz. Nothing happens yet
+    resampled_signal = ad.get_value() # The original audio data will be resampled while being fetched here.
+
+
+Audio Dataset
+^^^^^^^^^^^^^
+
+The :class:`OSmOSE.core_api.audio_dataset.AudioDataset` class enables the instantiation and manipulation of large amounts of
+``AudioData`` objects with simple operations.
+
+Instantiation
+"""""""""""""
+
+The constructor of the ``AudioDataset`` class accepts a list of ``AudioData`` as parameter.
+
+But this is not the only way to create an audio dataset.
+The :meth:`OSmOSE.core_api.audio_dataset.AudioDataset.from_folder` class method allows to easily instantiate
+an ``AudioDataset`` from a given folder containing audio files:
+
+.. code-block:: python
+
+    from pathlib import Path
+    from OSmOSE.core_api.audio_dataset import AudioDataset
+    from pandas import Timestamp, Timedelta
+
+    folder = Path(r"...")
+    ads = AudioDataset.from_folder
+    (
+        folder=folder,
+        strptime_format="%y_%m_%d_%H_%M_%S", # To parse the files begin Timestamp
+        begin=Timestamp("2009-01-06 12:00:00"),
+        end=Timestamp("2009-01-06 14:00:00"),
+        data_duration=Timedelta("10s")
+    )
+
+The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from ``2009-01-06 12:00:00`` to ``2009-01-06 14:00:00``.
+
+You don't have to worry about the shape of the original audio files: audio data will be fetched seamlessly in the corresponding
+file(s) whenever you need it.
+
+Manipulation
+""""""""""""
+
+If one wanted to resample these 10s-long audio data and export them as wav files, the ``AudioDataset`` makes it easy:
+
+.. code-block:: python
+
+    ads.sample_rate = 48_000 # The sample rate of all AudioData will be edited
+    ads.write(folder / "output") # All audio data will be exported to wav files in that folder
+
+All the ``AudioData`` constituting the ``AudioDataset`` are accessible through the :attr:`OSmOSE.core_api.audio_dataset.AudioDataset.data`
+field:
+
+.. code-block:: python
+
+    # Filtering the ads data to remove data without audio (e.g. between files)
+    ads.data = [ad for ad in ads.data if not ad.is_empty]
+
+    # Resampling/Exporting only the first audio data
+    ad = ads.data[0]
+    ad.sample_rate = 128_000
+    ad.write(folder / "alone_data")
+
+
+Spectro Data
+^^^^^^^^^^^^
+
+The :class:`OSmOSE.core_api.spectro_data.SpectroData` class allows to perform spectral computations and to plot spectrograms from ``AudioData`` objects.
+
+The most straightforward way to instantiate a ``SpectroData`` is from an ``AudioData`` and a `scipy.signal.ShortTimeFFT <https://docs.scipy.org/doc//scipy/reference/generated/scipy.signal.ShortTimeFFT.html>`_ instance:
+
+.. code-block:: python
+
+    from OSmOSE.core_api.audio_data import AudioData
+    from OSmOSE.core_api.spectro_data import SpectroData
+    from scipy.signal import ShortTimeFFT
+    from scipy.signal.windows import hamming
+
+    ad = AudioData(...) # See AudioData documentation
+
+    sft = ShortTimeFFT(
+        win=hamming(1024),
+        hop=512,
+        fs=ad.sample_rate,
+    )
+
+    sd = SpectroData.from_audio_data(data=ad, fft=sft)
+
+Once again, no audio has yet been fetched: everything happens only on-demand.
+
+NPZ matrices
+""""""""""""
+
+The ``SpectroData`` object can be used to compute the spectrum matrices of the ``AudioData`` with the :meth:`OSmOSE.core_api.spectro_data.SpectroData.get_value` method.
+
+The :attr:`OSmOSE.core_api.spectro_data.SpectroData.sx_dtype` property can be set to either ``complex`` (default) or ``float`` to return either the spectrum matrices as complex numbers or absolute values, respectively.
+
+The spectrum matrices can be converted to decibels thanks to the :meth:`OSmOSE.core_api.spectro_data.SpectroData.to_db` method.
+This method will convert the matrix values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
+
+The spectrum matrices can then be exported to npz files thanks to the :meth:`OSmOSE.core_api.spectro_data.SpectroData.write` method.
+
+.. code-block:: python
+
+    sd = SpectroData.from_audio_data(data=ad, fft=sft)
+
+    sx = sd.get_value()
+    sx_db = sd.to_db(sx)
+
+    # If sx has already been computed, you can pass it as a parameter to avoid re-computing it.
+    # Otherwise, it will just be computed from scratch.
+    sd.write(Path(r"output_folder"), sx=sx)
+
+
+Plot and export
+"""""""""""""""
+
+Spectrograms can be plotted from the ``SpectroData`` objects thanks to the :meth:`OSmOSE.core_api.spectro_data.SpectroData.plot` method.
+
+OSEkit uses `pyplot <https://matplotlib.org/stable/tutorials/pyplot.html>`_ for plotting spectrograms. A pyplot `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes>`_
+can be provided to the ``SpectroData.plot()`` method to specify an Axes in which to plot the spectrogram:
+
+.. code-block:: python
+
+    from OSmOSE.core_api.spectro_data import SpectroData
+    import matplotlib.pyplot as plt
+
+    sd = SpectroData(...) # See SpectroData documentation
+
+    sd.plot() # This will plot on a default figure
+    plt.show()
+
+    _, axs = plt.subplots(2,1)
+    sd.plot(ax=axs[0])
+    plt.show() # The spectrogram will be plotted on the top Axes of the figure
+
+Custom frequency scales
+"""""""""""""""""""""""
+
+The y-axis of the spectrograms can be parametrized thanks to the :class:`OSmOSE.core_api.frequency_scale.Scale` class.
+
+The custom ``Scale`` is made of ``ScalePart`` (:class:`OSmOSE.core_api.frequency_scale.ScalePart`). Each ``ScalePart``
+correspond to a given frequency range on a given area of the y-axis:
+
+.. code-block:: python
+
+    from OSmOSE.core_api.frequency_scale import Scale, ScalePart
+
+    scale = Scale(
+        [
+            ScalePart(
+                p_min=0., # From 0% of the axis
+                p_max=.5, # To 50% of the axis
+                f_min=5_000., # From 5 kHz
+                f_max=20_000, # To 20 kHz
+            ),
+            ScalePart(
+                p_min=.5, # From 50% of the axis
+                p_max=.7, # To 70% of the axis
+                f_min=0., # From 5 kHz
+                f_max=3_000., # To 20 kHz
+            ),
+            ScalePart(
+                p_min=.7, # From 70% of the axis
+                p_max=1., # To 100% of the axis
+                f_min=0., # From 0 Hz
+                f_max=72_000, # To 72 kHz
+            ),
+        ],
+    )
+    fig, axs = plt.subplots(2,1)
+    sd.plot(ax=axs[0]) # We plot the full spectrogram at the top
+    sd.plot(ax=axs[1],scale=scale) # And the custom scale one at the bottom
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0, hspace=0, wspace=0)
+    plt.show()
+
+The resulting figure presents the full-scale spectrogram at the top (from 0 to 72 kHz), and the custom-scale one at the bottom:
+
+.. image:: _static/spectrograms/frequency_scale.png
+
+
+LTAS Data
+^^^^^^^^^
+
+OSEkit provides the :class:`OSmOSE.core_api.ltas_data.LTASData` class for computing and plotting LTAS (**L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum).
+
+LTAS are suitable when a spectrum is computed over a very long time and that the spectrum matrix time dimension reach a really high value.
+In that case, time bins can be averaged to form a LTAS, which time resolution is lower than that of the original spectrum.
+
+In OSEkit, LTAS are computed recursively: the user specifies a target number of time bins in the spectrum matrix, noted ``n_bins``.
+
+The visualization below depicts the process: the LTAS is computed with a target ``n_bins = 3000``.
+Yellow rectangles depict the audio data (the x-axis being the time axis), and the number in the lower right
+corner depicts the number of time bins in the spectrum matrix for this audio data.
+The audio is recursively split in ``n_bins`` parts (it is split in 3 in the
+representation instead of 3000 for clarity purposes) until the number of time bins in the matrix gets below ``n_bins``.
+Then, these spectrum parts are computed (hatched rectangles) and averaged across the time axis (filled rectangles).
+
+.. image:: _static/ltas/ltas.gif
+   :width: 300px
+   :align: center
+
+``LTASData`` objects inherit from ``SpectroData``. It uses the same methods, only the additionnal ``nb_time_bins`` parameter
+should be provided:
+
+.. code-block:: python
+
+    ad = AudioData(...) # See AudioData documentation
+    sft = ShortTimeFFT(win = 1024, hop = 512, fs = ad.sample_rate)
+    ltas = LTASData.from_audio_data(data=ad, fft=sft, nb_time_bins=3000)
+
+    ltas.plot()
+    plt.show()
+
+A ``SpectroData`` object can be turned into a ``LTASData`` thanks to the :meth:`OSmOSE.core_api.ltas_data.LTASData.from_spectro_data` method.

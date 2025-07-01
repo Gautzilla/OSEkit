@@ -20,3 +20,6 @@ Core API
    spectroitem
    spectrodata
    spectrodataset
+   ltasdata
+   audiofilemanager
+   frequencyscale
