@@ -631,7 +631,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         spectro_data = cls.from_audio_data(
             audio_data,
             sft,
-            v_lim=dictionary["v_lim"],
+            v_lim=tuple(dictionary["v_lim"]),
             colormap=dictionary["colormap"],
         )
 
