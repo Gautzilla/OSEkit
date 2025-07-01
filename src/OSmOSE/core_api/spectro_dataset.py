@@ -41,10 +41,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         suffix: str = "",
         folder: Path | None = None,
         scale: Scale | None = None,
+        v_lim: tuple[float, float] | None = None,
     ) -> None:
         """Initialize a SpectroDataset."""
         super().__init__(data=data, name=name, suffix=suffix, folder=folder)
         self.scale = scale
+        self.v_lim = v_lim
 
     @property
     def fft(self) -> ShortTimeFFT:
@@ -68,6 +70,19 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def colormap(self, colormap: str) -> None:
         for d in self.data:
             d.colormap = colormap
+
+    @property
+    def v_lim(self) -> tuple[float, float] | None:
+        """Return the most frequent colormap of the spectro dataset."""
+        return max(
+            {d.v_lim for d in self.data},
+            key=[d.v_lim for d in self.data].count,
+        )
+
+    @v_lim.setter
+    def v_lim(self, v_lim: tuple[float, float] | None) -> None:
+        for d in self.data:
+            d.v_lim = v_lim
 
     @property
     def folder(self) -> Path:
