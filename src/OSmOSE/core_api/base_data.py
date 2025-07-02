@@ -71,11 +71,20 @@ class BaseData(Generic[TItem, TFile], Event):
 
     def __str__(self) -> str:
         """Overwrite __str__."""
+        return self.name
+
+    @property
+    def name(self) -> str:
+        """Name of the exported files."""
         return (
             self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED)
             if self._name is None
             else self._name
         )
+
+    @name.setter
+    def name(self, name: str | None) -> None:
+        self._name = name
 
     @property
     def is_empty(self) -> bool:
