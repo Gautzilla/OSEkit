@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from scipy.signal import ShortTimeFFT
+from tqdm import tqdm
 
 from OSmOSE.config import DPDEFAULT
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -110,7 +111,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         last = len(self.data) if last is None else last
-        for data in self.data[first:last]:
+        for data in tqdm(self.data[first:last]):
             data.save_spectrogram(folder, scale=self.scale)
 
     def write_welch(
@@ -127,7 +128,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         folder.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
         timestamps = []
         pxs = []
-        for data in self.data[first:last]:
+        for data in tqdm(self.data[first:last]):
             timestamps.append(f"{data.begin!s}_{data.end!s}")
             pxs.append(
                 data.get_welch(
@@ -172,7 +173,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         last = len(self.data) if last is None else last
-        for data in self.data[first:last]:
+        for data in tqdm(self.data[first:last]):
             sx = data.get_value()
             data.write(folder=matrix_folder, sx=sx, link=link)
             data.save_spectrogram(folder=spectrogram_folder, sx=sx, scale=self.scale)

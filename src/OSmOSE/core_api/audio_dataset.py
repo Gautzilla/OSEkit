@@ -10,6 +10,8 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
+from tqdm import tqdm
+
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -112,7 +114,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
         """
         last = len(self.data) if last is None else last
-        for data in self.data[first:last]:
+        for data in tqdm(self.data[first:last]):
             data.write(folder=folder, subtype=subtype, link=link)
 
     @classmethod
