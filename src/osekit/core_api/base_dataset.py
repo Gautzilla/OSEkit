@@ -13,12 +13,12 @@ from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
 from tqdm import tqdm
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
-from OSmOSE.config import global_logging_context as glc
-from OSmOSE.core_api.base_data import BaseData
-from OSmOSE.core_api.base_file import BaseFile
-from OSmOSE.core_api.event import Event
-from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
+from osekit.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+from osekit.config import global_logging_context as glc
+from osekit.core_api.base_data import BaseData
+from osekit.core_api.base_file import BaseFile
+from osekit.core_api.event import Event
+from osekit.core_api.json_serializer import deserialize_json, serialize_json
 
 if TYPE_CHECKING:
     import pytz
