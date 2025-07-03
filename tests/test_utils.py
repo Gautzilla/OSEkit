@@ -354,6 +354,8 @@ def test_locked(tmp_path: pytest.fixture, monkeypatch: pytest.MonkeyPatch) -> No
     ],
 )
 def test_get_closest_value_index(
-    values: list[float], target: float, expected: int,
+    values: list[float],
+    target: float,
+    expected: int,
 ) -> None:
     assert get_closest_value_index(values=values, target=target) == expected
