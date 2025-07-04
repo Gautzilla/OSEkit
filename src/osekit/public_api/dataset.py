@@ -8,12 +8,13 @@ It has additionnal metadata that can be exported, e.g. to APLOSE.
 
 from __future__ import annotations
 
+import logging
 import shutil
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
-from osekit.config import resample_quality_settings
+from osekit.config import DPDEFAULT, resample_quality_settings
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.base_dataset import BaseDataset
 from osekit.core_api.instrument import Instrument
@@ -109,6 +110,9 @@ class Dataset:
         and creates metadata csv used by APLOSE.
 
         """
+        self._create_logger()
+
+        self.logger.info("Analyzing original audio files...")
         ads = AudioDataset.from_folder(
             self.folder,
             strptime_format=self.strptime_format,
@@ -118,14 +122,31 @@ class Dataset:
             instrument=self.instrument,
         )
         self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
+
+        self.logger.info("Organizing dataset folder...")
         move_tree(
-            self.folder,
-            self.folder / "other",
-            {file.path for file in ads.files},
+            source=self.folder,
+            destination=self.folder / "other",
+            excluded_paths={file.path for file in ads.files}
+            | set((self.folder / "log").iterdir())
+            | {self.folder / "log"},
         )
         self._sort_dataset(ads)
         ads.write_json(ads.folder)
         self.write_json()
+
+    def _create_logger(self) -> None:
+        logs_directory = self.folder / "log"
+        if not logs_directory.exists():
+            logs_directory.mkdir(mode=DPDEFAULT)
+        self.logger = logging.getLogger("dataset").getChild(self.folder.name)
+        self.file_handler = logging.FileHandler(logs_directory / "logs.log", mode="w")
+        self.file_handler.setFormatter(
+            logging.getLogger("dataset").handlers[0].formatter,
+        )
+        self.logger.setLevel(logging.DEBUG)
+        self.file_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(self.file_handler)
 
     def reset(self) -> None:
         """Reset the Dataset.
@@ -139,6 +160,8 @@ class Dataset:
 
         if self.folder / "other" in files_to_remove:
             move_tree(self.folder / "other", self.folder)
+
+        self.file_handler.close()
 
         for file in files_to_remove:
             if file.is_dir():
@@ -534,7 +557,9 @@ class Dataset:
             The deserialized BaseDataset.
 
         """
-        return cls.from_dict(deserialize_json(file))
+        instance = cls.from_dict(deserialize_json(file))
+        instance._create_logger()  # noqa: SLF001
+        return instance
 
 
 DatasetChild = TypeVar("DatasetChild", bound=BaseDataset)
