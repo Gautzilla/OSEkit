@@ -140,13 +140,13 @@ class Dataset:
         if not logs_directory.exists():
             logs_directory.mkdir(mode=DPDEFAULT)
         self.logger = logging.getLogger("dataset").getChild(self.folder.name)
-        self.file_handler = logging.FileHandler(logs_directory / "logs.log", mode="w")
-        self.file_handler.setFormatter(
+        file_handler = logging.FileHandler(logs_directory / "logs.log", mode="w")
+        file_handler.setFormatter(
             logging.getLogger("dataset").handlers[0].formatter,
         )
         self.logger.setLevel(logging.DEBUG)
-        self.file_handler.setLevel(logging.DEBUG)
-        self.logger.addHandler(self.file_handler)
+        file_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(file_handler)
 
     def reset(self) -> None:
         """Reset the Dataset.
@@ -161,7 +161,7 @@ class Dataset:
         if self.folder / "other" in files_to_remove:
             move_tree(self.folder / "other", self.folder)
 
-        self.file_handler.close()
+        self.logger.handlers.clear()
 
         for file in files_to_remove:
             if file.is_dir():
