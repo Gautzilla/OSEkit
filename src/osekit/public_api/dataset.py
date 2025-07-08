@@ -189,6 +189,8 @@ class Dataset:
             Dataset.run_analysis() method.
 
         """
+        self.logger.info("Creating the audio data...")
+
         ads = AudioDataset.from_files(
             files=list(self.origin_files),
             begin=analysis.begin,
@@ -288,7 +290,7 @@ class Dataset:
         if analysis.is_spectro:
             sds = self.get_analysis_spectrodataset(
                 analysis=analysis,
-                audio_dataset=audio_dataset,
+                audio_dataset=ads,
             )
             self._add_spectro_dataset(sds=sds)
 
@@ -383,6 +385,7 @@ class Dataset:
                 matrix_folder_name=matrix_folder_name,
                 spectrogram_folder_name=spectrogram_folder_name,
                 welch_folder_name=welch_folder_name,
+                logger=self.logger,
             )
             return
 
