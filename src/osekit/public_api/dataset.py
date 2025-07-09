@@ -112,6 +112,8 @@ class Dataset:
         """
         self._create_logger()
 
+        self.logger.info("Building the dataset...")
+
         self.logger.info("Analyzing original audio files...")
         ads = AudioDataset.from_folder(
             self.folder,
@@ -134,6 +136,8 @@ class Dataset:
         self._sort_dataset(ads)
         ads.write_json(ads.folder)
         self.write_json()
+
+        self.logger.info("Build done!")
 
     def _create_logger(self) -> None:
         logs_directory = self.folder / "log"

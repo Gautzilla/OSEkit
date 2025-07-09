@@ -63,6 +63,8 @@ def write_analysis(
     """
     logger = glc.logger if logger is None else logger
 
+    logger.info("Running analysis...")
+
     if AnalysisType.AUDIO in analysis_type:
         logger.info("Writing audio files...")
         ads.write(
@@ -122,6 +124,7 @@ def write_analysis(
 
     # Update the sds from the JSON in case it has already been modified in another job
     sds.update_json_audio_data(first=first, last=last)
+    logger.info("Analysis done!")
 
 
 if __name__ == "__main__":
