@@ -179,7 +179,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         """
         last = len(self.data) if last is None else last
         for data in tqdm(
-            self.data[first:last], disable=os.environ.get("DISABLE_TQDM", "")
+            self.data[first:last], disable=os.environ.get("DISABLE_TQDM", ""),
         ):
             data.write(folder=folder, link=link)
 
@@ -293,16 +293,20 @@ class BaseDataset(Generic[TData, TFile], Event):
         if not end:
             end = max(file.end for file in files)
         if data_duration:
-            data_base = [
+            data_base = cls._get_base_data_from_files(begin,end,data_duration,files)
+        else:
+            data_base = [BaseData.from_files(files, begin=begin, end=end)]
+        return cls(data_base, name=name)
+
+    @classmethod
+    def _get_base_data_from_files(cls, begin: Timestamp, end: Timestamp, data_duration: Timedelta, files: list[TFile]) -> list[BaseData]:
+        return [
                 BaseData.from_files(files, begin=b, end=b + data_duration)
                 for b in tqdm(
                     date_range(begin, end, freq=data_duration, inclusive="left"),
                     disable=os.environ.get("DISABLE_TQDM", ""),
                 )
             ]
-        else:
-            data_base = [BaseData.from_files(files, begin=begin, end=end)]
-        return cls(data_base, name=name)
 
     @classmethod
     def from_folder(  # noqa: PLR0913
