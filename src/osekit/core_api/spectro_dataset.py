@@ -143,7 +143,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         """
         last = len(self.data) if last is None else last
         for data in tqdm(
-            self.data[first:last], disable=os.environ.get("DISABLE_TQDM", "")
+            self.data[first:last],
+            disable=os.environ.get("DISABLE_TQDM", ""),
         ):
             data.save_spectrogram(folder, scale=self.scale)
 
@@ -162,7 +163,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         timestamps = []
         pxs = []
         for data in tqdm(
-            self.data[first:last], disable=os.environ.get("DISABLE_TQDM", "")
+            self.data[first:last],
+            disable=os.environ.get("DISABLE_TQDM", ""),
         ):
             timestamps.append(f"{data.begin!s}_{data.end!s}")
             pxs.append(
@@ -209,7 +211,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         """
         last = len(self.data) if last is None else last
         for data in tqdm(
-            self.data[first:last], disable=os.environ.get("DISABLE_TQDM", "")
+            self.data[first:last],
+            disable=os.environ.get("DISABLE_TQDM", ""),
         ):
             sx = data.get_value()
             data.write(folder=matrix_folder, sx=sx, link=link)
@@ -367,7 +370,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
-        bound: Literal["files", "timedelta"] = "timedelta",
+        mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
         name: str | None = None,
         v_lim: tuple[float, float] | None | object = __sentinel_value,
@@ -393,14 +396,19 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
-        bound: Literal["files", "timedelta"]
-            Bound between the original files and the dataset data.
+        mode: Literal["files", "timedelta_total", "timedelta_file"]
+            Mode of creation of the dataset data from the original files.
             "files": one data will be created for each file.
-            "timedelta": data objects of duration equal to data_duration will
-            be created.
+            "timedelta_total": data objects of duration equal to data_duration will
+            be created from the very beginning to the very end of the
+            original files duration.
+            "timedelta_file": data objects of duration equal to data_duration will
+            be created from the beginning of each original file until it would resume
+            in an empty data. Then, the next data object will be created from the
+            beginning of the next original file.
         data_duration: Timedelta | None
             Duration of the spectro data objects.
-            If bound is set to "files", this parameter has no effect.
+            If mode is set to "files", this parameter has no effect.
             If provided, spectro data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
         name: str|None
@@ -425,7 +433,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             begin=begin,
             end=end,
             timezone=timezone,
-            bound=bound,
+            mode=mode,
             data_duration=data_duration,
             **kwargs,
         )

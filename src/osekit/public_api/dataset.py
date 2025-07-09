@@ -118,7 +118,7 @@ class Dataset:
         ads = AudioDataset.from_folder(
             self.folder,
             strptime_format=self.strptime_format,
-            bound="files",
+            mode="files",
             timezone=self.timezone,
             name="original",
             instrument=self.instrument,

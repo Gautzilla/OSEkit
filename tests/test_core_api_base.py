@@ -557,7 +557,7 @@ def test_base_dataset_file_bound(
 ) -> None:
     ds = BaseDataset.from_files(
         files=files,
-        bound=bound,
+        mode=bound,
         data_duration=data_duration,
     )
 
