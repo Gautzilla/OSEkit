@@ -6,6 +6,7 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
@@ -141,7 +142,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             Destination folder in which the dataset files will be moved.
 
         """
-        for file in tqdm(self.files):
+        for file in tqdm(self.files, disable=os.environ.get("DISABLE_TQDM", "")):
             file.move(folder)
         self._folder = folder
 
@@ -177,7 +178,9 @@ class BaseDataset(Generic[TData, TFile], Event):
 
         """
         last = len(self.data) if last is None else last
-        for data in tqdm(self.data[first:last]):
+        for data in tqdm(
+            self.data[first:last], disable=os.environ.get("DISABLE_TQDM", "")
+        ):
             data.write(folder=folder, link=link)
 
     def to_dict(self) -> dict:
@@ -293,7 +296,8 @@ class BaseDataset(Generic[TData, TFile], Event):
             data_base = [
                 BaseData.from_files(files, begin=b, end=b + data_duration)
                 for b in tqdm(
-                    date_range(begin, end, freq=data_duration, inclusive="left")
+                    date_range(begin, end, freq=data_duration, inclusive="left"),
+                    disable=os.environ.get("DISABLE_TQDM", ""),
                 )
             ]
         else:
@@ -361,7 +365,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             supported_file_extensions = []
         valid_files = []
         rejected_files = []
-        for file in tqdm(folder.iterdir()):
+        for file in tqdm(folder.iterdir(), disable=os.environ.get("DISABLE_TQDM", "")):
             if file.suffix.lower() not in supported_file_extensions:
                 continue
             try:

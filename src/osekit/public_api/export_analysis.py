@@ -223,8 +223,16 @@ if __name__ == "__main__":
         default=0o002,
         help="The umask to apply on the created file permissions.",
     )
+    parser.add_argument(
+        "--tqdm_disable",
+        type=int,
+        default=1,
+        help="Disable TQDM progress bars.",
+    )
 
     args = parser.parse_args()
+
+    os.environ["DISABLE_TQDM"] = "" if not args.tqdm_disable else str(args.tqdm_disable)
 
     os.umask(args.umask)
 
