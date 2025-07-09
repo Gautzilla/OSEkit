@@ -309,6 +309,7 @@ class BaseDataset(Generic[TData, TFile], Event):
     ) -> list[BaseData]:
         active_file_index = 0
         output = []
+        files = sorted(files, key=lambda f: f.begin)
         for data_begin in tqdm(
             date_range(begin, end, freq=data_duration, inclusive="left"),
             disable=os.environ.get("DISABLE_TQDM", ""),
