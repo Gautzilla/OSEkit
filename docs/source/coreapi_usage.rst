@@ -184,6 +184,9 @@ an ``AudioDataset`` from a given folder containing audio files:
 
 The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from ``2009-01-06 12:00:00`` to ``2009-01-06 14:00:00``.
 
+This is the default behaviour, but other ways of computing the ``AudioData`` time locations are available through the
+:meth:`osekit.core_api.audio_dataset.AudioDataset.from_folder` ``mode`` parameter (see the API documentation for more info).
+
 You don't have to worry about the shape of the original audio files: audio data will be fetched seamlessly in the corresponding
 file(s) whenever you need it.
 
