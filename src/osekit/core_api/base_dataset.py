@@ -271,12 +271,11 @@ class BaseDataset(Generic[TData, TFile], Event):
             Mode of creation of the dataset data from the original files.
             "files": one data will be created for each file.
             "timedelta_total": data objects of duration equal to data_duration will
-            be created from the very beginning to the very end of the
-            original files duration.
+            be created from the begin timestamp to the end timestamp.
             "timedelta_file": data objects of duration equal to data_duration will
-            be created from the beginning of each original file until it would resume
-            in an empty data. Then, the next data object will be created from the
-            beginning of the next original file.
+            be created from the beginning of the first file that the begin timestamp is into, until it would resume
+            in a data beginning between two files. Then, the next data object will be created from the
+            beginning of the next original file and so on.
         data_duration: Timedelta | None
             Duration of the data objects.
             If mode is set to "files", this parameter has no effect.
@@ -442,12 +441,11 @@ class BaseDataset(Generic[TData, TFile], Event):
             Mode of creation of the dataset data from the original files.
             "files": one data will be created for each file.
             "timedelta_total": data objects of duration equal to data_duration will
-            be created from the very beginning to the very end of the
-            original files duration.
+            be created from the begin timestamp to the end timestamp.
             "timedelta_file": data objects of duration equal to data_duration will
-            be created from the beginning of each original file until it would resume
-            in an empty data. Then, the next data object will be created from the
-            beginning of the next original file.
+            be created from the beginning of the first file that the begin timestamp is into, until it would resume
+            in a data beginning between two files. Then, the next data object will be created from the
+            beginning of the next original file and so on.
         data_duration: Timedelta | None
             Duration of the data objects.
             If mode is set to "files", this parameter has no effect.
