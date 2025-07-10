@@ -200,6 +200,7 @@ class Dataset:
             begin=analysis.begin,
             end=analysis.end,
             data_duration=analysis.data_duration,
+            mode=analysis.mode,
             name=analysis.name,
             instrument=self.instrument,
         )
