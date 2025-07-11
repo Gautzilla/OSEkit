@@ -19,7 +19,7 @@ and each part is replaced with an average of the stft performed within it.
 
 from __future__ import annotations
 
-import os
+import multiprocessing as mp
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -115,6 +115,12 @@ class LTASData(SpectroData):
         self.nb_time_bins = nb_time_bins
         self.sx_dtype = float
 
+    def mean_value_part(self, sub_spectro: LTASData) -> np.ndarray:
+        return np.mean(
+            sub_spectro.get_value(depth=1),
+            axis=1,
+        )
+
     def get_value(self, depth: int = 0) -> np.ndarray:
         """Return the Sx matrix of the LTAS.
 
@@ -130,16 +136,19 @@ class LTASData(SpectroData):
             for ad in self.audio_data.split(self.nb_time_bins)
         ]
 
-        return np.vstack(
-            [
-                np.mean(sub_spectro.get_value(depth + 1), axis=1)
-                for sub_spectro in (
-                    sub_spectros
-                    if depth != 0
-                    else tqdm(sub_spectros, disable=os.environ.get("DISABLE_TQDM", ""))
+        if depth != 0:
+            return np.vstack(
+                [self.mean_value_part(sub_spectro) for sub_spectro in sub_spectros]
+            ).T
+
+        with mp.Pool(processes=5) as pool:
+            means = list(
+                tqdm(
+                    pool.imap(self.mean_value_part, sub_spectros),
+                    total=len(sub_spectros),
                 )
-            ],
-        ).T
+            )
+            return np.vstack(means).T
 
     @classmethod
     def from_spectro_data(
