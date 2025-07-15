@@ -21,3 +21,5 @@ resample_quality_settings = {
     "downsample": "QQ",
     "upsample": "MQ",
 }
+
+nb_processes = 1

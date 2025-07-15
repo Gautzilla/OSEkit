@@ -19,14 +19,13 @@ and each part is replaced with an average of the stft performed within it.
 
 from __future__ import annotations
 
-import multiprocessing as mp
 from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.signal import ShortTimeFFT
-from tqdm import tqdm
 
 from osekit.core_api.spectro_data import SpectroData
+from osekit.utils.multiprocess_utils import multiprocess
 
 if TYPE_CHECKING:
     from pandas import Timestamp
@@ -138,17 +137,12 @@ class LTASData(SpectroData):
 
         if depth != 0:
             return np.vstack(
-                [self.mean_value_part(sub_spectro) for sub_spectro in sub_spectros]
+                [self.mean_value_part(sub_spectro) for sub_spectro in sub_spectros],
             ).T
 
-        with mp.Pool(processes=5) as pool:
-            means = list(
-                tqdm(
-                    pool.imap(self.mean_value_part, sub_spectros),
-                    total=len(sub_spectros),
-                )
-            )
-            return np.vstack(means).T
+        return np.vstack(
+            list(multiprocess(self.mean_value_part, sub_spectros)),
+        ).T
 
     @classmethod
     def from_spectro_data(
