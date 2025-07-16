@@ -21,6 +21,7 @@ from osekit.core_api.json_serializer import deserialize_json
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_file import SpectroFile
 from osekit.utils.core_utils import locked
+from osekit.utils.multiprocess_utils import multiprocess
 
 if TYPE_CHECKING:
     import pytz
@@ -122,6 +123,10 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         for file in self.files:
             file.move(folder)
 
+    def _save_spectrogram(self, sd: SpectroData, folder: Path) -> None:
+        """Save the spectrogram data."""
+        sd.save_spectrogram(folder)
+
     def save_spectrogram(
         self,
         folder: Path,
@@ -142,11 +147,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         last = len(self.data) if last is None else last
-        for data in tqdm(
-            self.data[first:last],
-            disable=os.environ.get("DISABLE_TQDM", ""),
-        ):
-            data.save_spectrogram(folder, scale=self.scale)
+        multiprocess(self._save_spectrogram, self.data[first:last], folder=folder)
 
     def write_welch(
         self,
