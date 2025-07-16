@@ -6,13 +6,11 @@ that simplify repeated operations on the spectro data.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from scipy.signal import ShortTimeFFT
-from tqdm import tqdm
 
 from osekit.config import DPDEFAULT
 from osekit.core_api.base_dataset import BaseDataset
@@ -150,7 +148,13 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         multiprocess(self._save_spectrogram, self.data[first:last], folder=folder)
 
     def _get_welch(
-        self, sd: SpectroData, nperseg, detrend, return_onesided, scaling, average
+        self,
+        sd: SpectroData,
+        nperseg,
+        detrend,
+        return_onesided,
+        scaling,
+        average,
     ) -> tuple[SpectroData, np.ndarray]:
         """Get the welch value of each SpectroData."""
         return sd, sd.get_welch(
@@ -193,6 +197,19 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             freq=self.fft.f,
         )
 
+    def _save_all_(
+        self,
+        data: SpectroData,
+        matrix_folder: Path,
+        spectrogram_folder: Path,
+        link: bool,
+    ) -> SpectroData:
+        """Save the data matrix and spectrogram to disk."""
+        sx = data.get_value()
+        data.write(folder=matrix_folder, sx=sx, link=link)
+        data.save_spectrogram(folder=spectrogram_folder, sx=sx, scale=self.scale)
+        return data
+
     def save_all(
         self,
         matrix_folder: Path,
@@ -220,13 +237,13 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         last = len(self.data) if last is None else last
-        for data in tqdm(
-            self.data[first:last],
-            disable=os.environ.get("DISABLE_TQDM", ""),
-        ):
-            sx = data.get_value()
-            data.write(folder=matrix_folder, sx=sx, link=link)
-            data.save_spectrogram(folder=spectrogram_folder, sx=sx, scale=self.scale)
+        self.data[first:last] = multiprocess(
+            func=self._save_all_,
+            enumerable=self.data[first:last],
+            matrix_folder=matrix_folder,
+            spectrogram_folder=spectrogram_folder,
+            link=link,
+        )
 
     def link_audio_dataset(
         self,
