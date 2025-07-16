@@ -149,6 +149,18 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         last = len(self.data) if last is None else last
         multiprocess(self._save_spectrogram, self.data[first:last], folder=folder)
 
+    def _get_welch(
+        self, sd: SpectroData, nperseg, detrend, return_onesided, scaling, average
+    ) -> tuple[SpectroData, np.ndarray]:
+        """Get the welch value of each SpectroData."""
+        return sd, sd.get_welch(
+            nperseg=nperseg,
+            detrend=detrend,
+            return_onesided=return_onesided,
+            scaling=scaling,
+            average=average,
+        )
+
     def write_welch(
         self,
         folder: Path,
@@ -163,20 +175,17 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         folder.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
         timestamps = []
         pxs = []
-        for data in tqdm(
+        for data, welch in multiprocess(
+            self._get_welch,
             self.data[first:last],
-            disable=os.environ.get("DISABLE_TQDM", ""),
+            nperseg=nperseg,
+            detrend=detrend,
+            return_onesided=return_onesided,
+            scaling=scaling,
+            average=average,
         ):
             timestamps.append(f"{data.begin!s}_{data.end!s}")
-            pxs.append(
-                data.get_welch(
-                    nperseg=nperseg,
-                    detrend=detrend,
-                    return_onesided=return_onesided,
-                    scaling=scaling,
-                    average=average,
-                ),
-            )
+            pxs.append(welch)
         np.savez(
             file=folder / f"{self.data[first]}.npz",
             timestamps=timestamps,
