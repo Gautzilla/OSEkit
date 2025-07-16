@@ -2,6 +2,7 @@
 
 import multiprocessing as mp
 import os
+from functools import partial
 from typing import Any
 
 from tqdm import tqdm
@@ -10,7 +11,10 @@ from osekit import config
 
 
 def multiprocess(
-    func: callable, enumerable: list, *args: tuple[Any, ...], **kwargs: dict[str, Any]
+    func: callable,
+    enumerable: list,
+    *args: Any,
+    **kwargs: Any,
 ) -> list[Any]:
     """Run a given callable function on an enumerable.
 
@@ -39,10 +43,12 @@ def multiprocess(
             for element in tqdm(enumerable, disable=os.environ.get("DISABLE_TQDM", ""))
         )
 
+    partial_func = partial(func, *args, **kwargs)
+
     with mp.Pool(config.nb_processes) as pool:
         return list(
             tqdm(
-                pool.imap(func, enumerable),
+                pool.imap(partial_func, enumerable),
                 total=len(list(enumerable)),
                 disable=os.environ.get("DISABLE_TQDM", ""),
             ),
