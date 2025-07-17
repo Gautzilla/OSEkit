@@ -416,7 +416,8 @@ class Dataset:
                 f"--downsampling-quality {resample_quality_settings['downsample']} "
                 f"--upsampling-quality {resample_quality_settings['upsample']} "
                 f"--umask {get_umask()} "
-                f"--nb-processes {config.nb_processes} ",
+                f"--multiprocessing {config.multiprocessing['is_active']} "
+                f"--nb-processes {config.multiprocessing['nb_processes']} ",
                 jobname="OSmOSE_Analysis",
                 preset="low",
                 env_name=sys.executable.replace("/bin/python", ""),

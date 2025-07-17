@@ -37,7 +37,7 @@ def multiprocess(
         Returned values of the function.
 
     """
-    if config.nb_processes == 1:
+    if not config.multiprocessing["is_active"]:
         return list(
             func(element, *args, **kwargs)
             for element in tqdm(enumerable, disable=os.environ.get("DISABLE_TQDM", ""))
@@ -45,7 +45,7 @@ def multiprocess(
 
     partial_func = partial(func, *args, **kwargs)
 
-    with mp.Pool(config.nb_processes) as pool:
+    with mp.Pool(config.multiprocessing["nb_processes"]) as pool:
         return list(
             tqdm(
                 pool.imap(partial_func, enumerable),

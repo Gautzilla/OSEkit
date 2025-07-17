@@ -234,16 +234,26 @@ if __name__ == "__main__":
         help="Disable TQDM progress bars.",
     )
     parser.add_argument(
+        "--multiprocessing",
+        type=str,
+        default="false",
+        help="Turn multiprocessing on or off.",
+    )
+    parser.add_argument(
         "--nb-processes",
-        type=int,
-        default=1,
+        type=str,
+        default=None,
         help="Set the number of processes to use.",
     )
 
     args = parser.parse_args()
 
     os.environ["DISABLE_TQDM"] = "" if not args.tqdm_disable else str(args.tqdm_disable)
-    config.nb_processes = args.nb_processes
+
+    config.multiprocessing["is_active"] = args.multiprocessing.lower() == "true"
+    config.nb_processes = (
+        None if args.nb_processes.lower() == "none" else int(args.nb_processes)
+    )
 
     os.umask(args.umask)
 
