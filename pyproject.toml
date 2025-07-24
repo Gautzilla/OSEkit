@@ -53,6 +53,9 @@ lint.select = ["ALL"]
     "BLE001", # Blind exceptions
     "PLR0913", # Too many arguments in methods
 ]
+"docs/source/*.ipynb" = [
+    "E402", # Module level import not at top of cell in doc notebooks
+]
 
 
 [tool.pytest.ini_options]
