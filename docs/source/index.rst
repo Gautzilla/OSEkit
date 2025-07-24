@@ -32,5 +32,5 @@ Instructions on how to use **OSEkit**.
 
    installation
    usage
+   examples
    api
-
