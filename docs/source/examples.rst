@@ -3,7 +3,7 @@
 
 .. _examples:
 
-This section gather **OSEkit** jupyter notebooks that complete typical tasks.
+This section gathers **OSEkit** jupyter notebooks that complete typical tasks.
 
 Example tasks will be completed with both the :ref:`Public <publicapi_usage>` and :ref:`Core API <coreapi_usage>` (see the :ref:`usage <usage>` section
 for more info about the differences between the two APIs).
