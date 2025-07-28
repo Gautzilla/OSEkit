@@ -19,7 +19,7 @@ This sample dataset is made of 10 ``10 s``-long audio files sampled at ``48 kHz`
 
    example_reshaping_one_file
 
-You have an audio file of given duration and sample rate and you want to extract a specific time period and/or resample it.
+Extract a specific time period and/or resample an audio file of given duration and sample rate.
 
 ===========
 
@@ -28,7 +28,7 @@ You have an audio file of given duration and sample rate and you want to extract
 
    example_reshaping_multiple_files
 
-Same example as the previous one, but at a larger scale: you have multiple audio files and want to reshape and export them.
+Same example as the previous one, but at a larger scale: reshape and export multiples files from an audio folder.
 
 ===========
 
@@ -47,4 +47,13 @@ Same example as the previous one, but at a larger scale: you have multiple audio
 
    example_multiple_spectrograms
 
-Same example as the previous one, but at a larger scale: you have multiple audio files and want to compute multiple spectrograms from them.
+Same example as the previous one, but at a larger scale: compute multiple spectrograms from an audio folder.
+
+===========
+
+.. toctree::
+   :maxdepth: 1
+
+   example_ltas
+
+Compute, plot and export a **L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum (**LTAS**)
