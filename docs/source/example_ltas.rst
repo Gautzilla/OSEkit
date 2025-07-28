@@ -1,5 +1,5 @@
-Computing Long-Term Average Spectrum
-====================================
+Computing a Long-Term Average Spectrum
+======================================
 
 .. _example_ltas:
 
@@ -21,3 +21,4 @@ This LTAS will:
    :maxdepth: 1
 
    example_ltas_core
+   example_ltas_public
