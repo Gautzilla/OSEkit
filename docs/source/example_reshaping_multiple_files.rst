@@ -12,7 +12,7 @@ In this example, we want to export reshaped files from the sample audio dataset 
 * Files that are in the gap between recordings should be skipped
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    example_reshaping_multiple_files_core
    example_reshaping_multiple_files_public

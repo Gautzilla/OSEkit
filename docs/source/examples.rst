@@ -37,7 +37,14 @@ Same example as the previous one, but at a larger scale: you have multiple audio
 
    example_spectrogram
 
-Compute the spectrum matrix of an ``AudioData``, export it and/or plot it as a spectrogram.
+| Compute the spectrum matrix and/or Power Spectral Density estimates of an ``AudioData``.
+| Export the matrices and/or plot a spectrogram.
 
 ===========
 
+.. toctree::
+   :maxdepth: 1
+
+   example_multiple_spectrograms
+
+Same example as the previous one, but at a larger scale: you have multiple audio files and want to compute multiple spectrograms from them.
