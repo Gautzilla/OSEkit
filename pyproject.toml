@@ -35,8 +35,8 @@ dev = [
     "myst-parser>=4.0.1",
     "ruff>=0.11.10",
     "sphinx>=8.2.3",
+    "sphinx-book-theme>=1.1.4",
     "sphinx-copybutton>=0.5.2",
-    "sphinx-rtd-theme>=3.0.2",
 ]
 
 [tool.ruff]
