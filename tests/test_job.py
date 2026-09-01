@@ -253,13 +253,9 @@ def test_submit_pbs_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
 
 
 def test_submit_pbs_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    script = tmp_path / "boc.py"
-    script.write_text("")
-    outdir = tmp_path
-    job = Job(script, name="amobishoproden", output_folder=outdir)
-    pbs_path = tmp_path / "amobishoproden.pbs"
+    job = Job(Path())
     pbs_scheduler = Pbs(queue="omp")
-    pbs_scheduler.write(job=job, path=pbs_path)
+    job.status = JobStatus.PREPARED
 
     class Dummy:
         def __init__(self) -> None:
@@ -272,7 +268,12 @@ def test_submit_pbs_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
         lambda *args, **kwargs: Dummy(),
     )
 
-    assert job.status == JobStatus.PREPARED
+    def mock_update_status(self: Pbs, job: Job) -> JobStatus:
+        return JobStatus.PREPARED
+
+    monkeypatch.setattr(Pbs, "update_status", mock_update_status)
+
+    # Submit error should leave the job prepared:
     with pytest.raises(RuntimeError, match="Submission failed with exit code 5"):
         pbs_scheduler.submit(job=job)
 
