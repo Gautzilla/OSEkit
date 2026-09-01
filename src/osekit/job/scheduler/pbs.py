@@ -252,8 +252,18 @@ class Pbs(Scheduler):
         'afterok:1234567'
         >>> Pbs._build_dependency_string({"afterok": ["1234567","4567891"]})
         'afterok:1234567:4567891'
-        >>> Pbs._build_dependency_string({"afterany":"7894561"})
-        'afterany:7894651'
+        >>> from pathlib import Path
+        >>> job = Job(Path())
+        >>> job._id = "7894561"
+        >>> Pbs._build_dependency_string({"afterany":job})
+        'afterany:7894561'
+        >>> from pathlib import Path
+        >>> job1 = Job(Path())
+        >>> job1._id = "7894561"
+        >>> job2 = Job(Path())
+        >>> job2._id = "4839572"
+        >>> Pbs._build_dependency_string({"afterany":[job1,job2]})
+        'afterany:7894561:4839572'
 
         """
         for dependency_type in dependencies:
