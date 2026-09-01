@@ -686,9 +686,58 @@ def test_pbs_build_dependency_string_with_string_input(
     ],
 )
 def test_pbs_build_dependencies_string_from_string_ids(
-    dependencies: dict[str, Job | str | list[Job | str]],
+    dependencies: dict[str, str | list[str]],
     expected: str,
 ) -> None:
+    assert Pbs()._build_dependency_string(dependencies=dependencies) == expected
+
+
+@pytest.mark.parametrize(
+    ("dependencies", "expected"),
+    [
+        pytest.param(
+            {"afterok": "1234567"},
+            "afterok:1234567",
+            id="one_type_one_job",
+        ),
+        pytest.param(
+            {"afterok": ["1234567", "2345678"]},
+            "afterok:1234567:2345678",
+            id="one_type_multiple_jobs",
+        ),
+        pytest.param(
+            {"afterok": "1234567", "afterany": "2345678"},
+            "afterok:1234567,afterany:2345678",
+            id="multiple_types_one_job",
+        ),
+        pytest.param(
+            {"afterok": ["1234567", "2345678"], "afterany": ["3456789", "4567890"]},
+            "afterok:1234567:2345678,afterany:3456789:4567890",
+            id="multiple_types_multiple_jobs",
+        ),
+    ],
+)
+def test_pbs_build_dependencies_string_from_jobs(
+    dependencies: dict[str, str | list[str]],
+    expected: str,
+) -> None:
+    def id_to_job(job_id: str | list[str]) -> Job | list[Job]:
+        """Convert a Job ID ``job_id`` to a Job object with an ID of ``job_id``
+
+        If ``job_id`` is a list, converts the list of job_ids to a list of jobs
+        with the given IDs."""
+        if isinstance(job_id, str):
+            job = Job(Path())
+            job._id = job_id
+            return job
+        output = []
+        for j_id in job_id:
+            job = Job(Path())
+            job._id = j_id
+            output.append(job)
+        return output
+
+    dependencies = {key: id_to_job(value) for key, value in dependencies.items()}
     assert Pbs()._build_dependency_string(dependencies=dependencies) == expected
 
 
