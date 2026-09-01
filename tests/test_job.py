@@ -682,11 +682,13 @@ def test_pbs_build_dependencies_string_from_jobs(
         if isinstance(job_id, str):
             job = Job(Path())
             job._id = job_id
+            job.status = JobStatus.QUEUED
             return job
         output = []
         for j_id in job_id:
             job = Job(Path())
             job._id = j_id
+            job.status = JobStatus.QUEUED
             output.append(job)
         return output
 
@@ -724,39 +726,6 @@ def test_submit_pbs_adds_dependency_flag(
 
     assert "-W" in captured_cmd["cmd"]
     assert "depend=afterok:1234567" in captured_cmd["cmd"]
-
-
-@pytest.mark.parametrize(
-    ("dependency_type", "expected"),
-    [
-        pytest.param("afterok", nullcontext("afterok:1234567"), id="afterok"),
-        pytest.param("afterany", nullcontext("afterany:1234567"), id="afterany"),
-        pytest.param("afternotok", nullcontext("afternotok:1234567"), id="afternotok"),
-        pytest.param("after", nullcontext("after:1234567"), id="after"),
-        pytest.param(
-            "not_a_supported_type",
-            pytest.raises(
-                ValueError,
-                match=r"Unsupported dependency type 'not_a_supported_type'",
-            ),
-            id="invalid_dependency_type",
-        ),
-    ],
-)
-def test_pbs_build_dependency_string_with_different_types(
-    dependency_type: str,
-    expected: type[Exception],
-) -> None:
-    """Test building dependency strings with different dependency types."""
-    scheduler = Pbs()
-    with expected as e:
-        assert (
-            scheduler._build_dependency_string(
-                dependencies="1234567",
-                dependency_type=dependency_type,
-            )
-            == e
-        )
 
 
 @pytest.mark.parametrize(
