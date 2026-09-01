@@ -70,7 +70,7 @@ class Pbs(Scheduler):
     def submit(
         self,
         job: Job,
-        dependency: Job | list[Job] | str | list[str] | None = None,
+        dependency: dict[str, Job | str | list[Job | str]] | None = None,
     ) -> None:
         """Submit the job to the scheduler.
 
@@ -78,12 +78,14 @@ class Pbs(Scheduler):
         ----------
         job: Job
             Job to submit to the scheduler.
-        dependency: Job | list[Job] | str | None
-            Job dependency. Can be:
-            - A ``Job`` instance: will wait for that job to complete successfully
-            - A ``list[Job]``: will wait for all jobs to complete successfully
-            - A ``str``: job ID (e.g., ``"12345.datarmor"``) or dependency specification
-            - ``None``: no dependency
+        dependency: dict[str, Job | str | list[Job|str]]
+            The dependencies of the submitted job.
+            The keys of the dictionary are the dependency types,
+            see https://help.altair.com/2022.1.0/PBS%20Professional/PBSReferenceGuide2022.1.pdf#page=151
+            for the list of supported values.
+            The values are the  other jobs (or their ID) ``job`` depends on
+            with the given dependency type.
+            If ``None``, the job is submitted without any dependency.
 
         """
         if self.update_status(job=job) is not JobStatus.PREPARED:
@@ -192,33 +194,52 @@ class Pbs(Scheduler):
             )
             raise ValueError(msg)
 
+    @classmethod
+    def _parse_job_ids(
+        cls,
+        dependencies: dict[str, Job | str | list[Job | str]],
+    ) -> dict[str, list[str]]:
+        parsed_dependencies = {}
+        for key, value in dependencies.items():
+            parsed_values = value if isinstance(value, list) else [value]
+            parsed_values = [
+                parsed_value.job_id if isinstance(parsed_value, Job) else parsed_value
+                for parsed_value in parsed_values
+            ]
+            parsed_dependencies[key] = parsed_values
+
+        for job_ids in parsed_dependencies.values():
+            for job_id in job_ids:
+                cls._validate_job_id(job_id=job_id)
+
+        return parsed_dependencies
+
     @staticmethod
-    def _validate_dependency(dependency: list[str] | list[Job]) -> list[str]:
-        job_ids = [dep.job_id if isinstance(dep, Job) else dep for dep in dependency]
+    def _validate_job_id(job_id: str) -> None:
         job_id_length = 7
-        for job_id in job_ids:
-            if not job_id.isdigit() or len(job_id) != job_id_length:
-                msg = (
-                    f"Invalid job ID '{job_id}'. "
-                    f"Job IDs must be {job_id_length} digits long."
-                )
-                raise ValueError(msg)
-        return job_ids
+        if not job_id.isdigit() or len(job_id) != job_id_length:
+            msg = (
+                f"Invalid job ID '{job_id}'. "
+                f"Job IDs must be {job_id_length} digits long."
+            )
+            raise ValueError(msg)
 
     @classmethod
     def _build_dependency_string(
         cls,
-        dependency: str | Job | list[str] | list[Job],
-        dependency_type: str = "afterok",
+        dependencies: dict[str, Job | str | list[Job | str]],
     ) -> str:
         """Build a PBS dependency string.
 
         Parameters
         ----------
-        dependency: Job | str
-            ``Job`` or job ID to depend on.
-        dependency_type: str
-            Type of dependency (``afterok``, ``afterany``, ``afternotok``, ``after``).
+        dependencies: dict[str, Job | str | list[Job|str]]
+            The dependencies of the submitted job.
+            The keys of the dictionary are the dependency types,
+            see https://help.altair.com/2022.1.0/PBS%20Professional/PBSReferenceGuide2022.1.pdf#page=151
+            for the list of supported values.
+            The values are the  other jobs (or their ID) ``job`` depends on
+            with the given dependency type.
 
         Returns
         -------
@@ -227,22 +248,21 @@ class Pbs(Scheduler):
 
         Examples
         --------
-        >>> Pbs._build_dependency_string("1234567")
+        >>> Pbs._build_dependency_string({"afterok": "1234567"})
         'afterok:1234567'
-        >>> Pbs._build_dependency_string(["1234567", "4567891"])
+        >>> Pbs._build_dependency_string({"afterok": ["1234567","4567891"]})
         'afterok:1234567:4567891'
-        >>> Pbs._build_dependency_string("7894561", dependency_type="afterany")
+        >>> Pbs._build_dependency_string({"afterany":"7894561"})
         'afterany:7894651'
 
         """
-        dependency = dependency if isinstance(dependency, list) else [dependency]
-        id_str = cls._validate_dependency(dependency=dependency)
-        cls._validate_dependency_type(dependency_type=dependency_type)
+        for dependency_type in dependencies:
+            cls._validate_dependency_type(dependency_type=dependency_type)
 
         if unsubmitted_job := next(
             (
                 j
-                for j in dependency
+                for j in dependencies
                 if isinstance(j, Job) and j.status.value < JobStatus.QUEUED.value
             ),
             None,
@@ -250,4 +270,9 @@ class Pbs(Scheduler):
             msg = f"Job '{unsubmitted_job.name}' has not been submitted yet."
             raise ValueError(msg)
 
-        return f"{dependency_type}:{':'.join(id_str)}"
+        id_str = cls._parse_job_ids(dependencies=dependencies)
+
+        return ",".join(
+            f"{dependency_type}:{':'.join(ids)}"
+            for dependency_type, ids in id_str.items()
+        )

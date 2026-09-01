@@ -657,7 +657,7 @@ def test_pbs_build_dependency_string_with_string_input(
             dep.job_id = id
 
     with expected as e:
-        assert scheduler._build_dependency_string(dependency=dependency) == e
+        assert scheduler._build_dependency_string(dependencies=dependency) == e
 
 
 def test_submit_pbs_adds_dependency_flag(
@@ -718,7 +718,7 @@ def test_pbs_build_dependency_string_with_different_types(
     with expected as e:
         assert (
             scheduler._build_dependency_string(
-                dependency="1234567",
+                dependencies="1234567",
                 dependency_type=dependency_type,
             )
             == e
