@@ -629,6 +629,21 @@ def test_pbs_validate_dependency_type() -> None:
         assert e.match(supported)
 
 
+def test_pbs_validate_job_id() -> None:
+    pbs = Pbs()
+
+    # Valid job ID shouldn't raise
+    pbs._validate_job_id("1234567")
+
+    # Invalid number of digits should raise
+    with pytest.raises(ValueError, match="Invalid job ID"):
+        pbs._validate_job_id("123456")
+
+    # Non-digit ID should raise
+    with pytest.raises(ValueError, match="Invalid job ID"):
+        pbs._validate_job_id("abcdefg")
+
+
 @pytest.mark.parametrize(
     ("dependencies", "expected"),
     [
