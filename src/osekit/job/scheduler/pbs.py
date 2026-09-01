@@ -6,9 +6,20 @@ from osekit.job.scheduler.scheduler import Scheduler
 
 
 class Pbs(Scheduler):
-    """Abstract class representing a job scheduler."""
+    """Abstract class representing a PBS job scheduler."""
 
-    _VALID_DEPENDENCY_TYPES = frozenset({"afterok", "afterany", "afternotok", "after"})
+    _VALID_DEPENDENCY_TYPES = frozenset(
+        {
+            "after",
+            "afterok",
+            "afternotok",
+            "afterany",
+            "before",
+            "beforeok",
+            "beforenotok",
+            "beforeany",
+        },
+    )
     JOB_FILE_EXTENSION = "pbs"
 
     def __init__(self, queue: Literal["omp", "mpi"] = "omp") -> None:

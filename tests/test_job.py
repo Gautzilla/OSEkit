@@ -522,38 +522,6 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
     assert submitted_jobs == [("prepared", jobs[0])]
 
 
-@pytest.mark.parametrize(
-    ("dependencies", "expected"),
-    [
-        pytest.param(
-            {"afterok": "1234567"},
-            "afterok:1234567",
-            id="one_type_one_job",
-        ),
-        pytest.param(
-            {"afterok": ["1234567", "2345678"]},
-            "afterok:1234567:2345678",
-            id="one_type_multiple_jobs",
-        ),
-        pytest.param(
-            {"afterok": "1234567", "afterany": "2345678"},
-            "afterok:1234567,afterany:2345678",
-            id="multiple_types_one_job",
-        ),
-        pytest.param(
-            {"afterok": ["1234567", "2345678"], "afterany": ["3456789", "4567890"]},
-            "afterok:1234567:2345678,afterany:3456789:4567890",
-            id="multiple_types_multiple_jobs",
-        ),
-    ],
-)
-def test_pbs_build_dependencies_string_from_string_ids(
-    dependencies: dict[str, str | list[str]],
-    expected: str,
-) -> None:
-    assert Pbs()._build_dependency_string(dependencies=dependencies) == expected
-
-
 def test_pbs_build_dependencies_string_validates_type(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -670,10 +638,14 @@ def test_pbs_validate_dependency_job_status(
         ),
     ],
 )
-def test_pbs_build_dependencies_string_from_jobs(
+def test_pbs_build_dependencies_string(
     dependencies: dict[str, str | list[str]],
     expected: str,
 ) -> None:
+    # %% Dependencies string from job IDs
+    assert Pbs()._build_dependency_string(dependencies=dependencies) == expected
+
+    # %% Dependencies string from Job instances
     def id_to_job(job_id: str | list[str]) -> Job | list[Job]:
         """Convert a Job ID ``job_id`` to a Job object with an ID of ``job_id``
 
