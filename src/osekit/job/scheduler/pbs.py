@@ -224,6 +224,29 @@ class Pbs(Scheduler):
             )
             raise ValueError(msg)
 
+    @staticmethod
+    def _validate_dependencies_jobs_status(
+        dependencies: dict[str, Job | str | list[Job | str]],
+    ) -> None:
+        jobs = []
+        for values in dependencies.values():
+            if isinstance(values, Job):
+                jobs.append(values)
+            if isinstance(values, list):
+                jobs.extend(v for v in values if isinstance(v, Job))
+        unsubmitted_jobs = []
+        for job in jobs:
+            if job.status.value >= JobStatus.QUEUED.value:
+                continue
+            unsubmitted_jobs.append(job)
+        if not unsubmitted_jobs:
+            return
+
+        msg = "The following job(s) have not been submitted yet:\n\n"
+        msg += "\n".join(
+            f"{job.job_id:<10}-{job.status:>20}" for job in unsubmitted_jobs
+        )
+
     @classmethod
     def _build_dependency_string(
         cls,
@@ -269,16 +292,7 @@ class Pbs(Scheduler):
         for dependency_type in dependencies:
             cls._validate_dependency_type(dependency_type=dependency_type)
 
-        if unsubmitted_job := next(
-            (
-                j
-                for j in dependencies
-                if isinstance(j, Job) and j.status.value < JobStatus.QUEUED.value
-            ),
-            None,
-        ):
-            msg = f"Job '{unsubmitted_job.name}' has not been submitted yet."
-            raise ValueError(msg)
+        cls._validate_dependencies_jobs_status(dependencies=dependencies)
 
         id_str = cls._parse_job_ids(dependencies=dependencies)
 
