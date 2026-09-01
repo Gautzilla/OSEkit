@@ -228,6 +228,13 @@ class Pbs(Scheduler):
     def _validate_dependencies_jobs_status(
         dependencies: dict[str, Job | str | list[Job | str]],
     ) -> None:
+        """Validate the status of the dependencies jobs.
+
+        Raise a ValueError if one or more ``Job`` instance
+        from the dependencies values has a status lower than
+        ``JobStatus.QUEUED``.
+
+        """
         jobs = []
         for values in dependencies.values():
             if isinstance(values, Job):
@@ -244,8 +251,9 @@ class Pbs(Scheduler):
 
         msg = "The following job(s) have not been submitted yet:\n\n"
         msg += "\n".join(
-            f"{job.job_id:<10}-{job.status:>20}" for job in unsubmitted_jobs
+            f"{job.job_id:.<10}{job.status:.>30}" for job in unsubmitted_jobs
         )
+        raise ValueError(msg)
 
     @classmethod
     def _build_dependency_string(

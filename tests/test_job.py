@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import subprocess
 from contextlib import nullcontext
 from pathlib import Path
@@ -726,6 +727,61 @@ def test_pbs_build_dependencies_string_validates_status(
     )
 
     assert validate_status_calls[0] == 1
+
+
+def make_job_with_status_and_id(status: JobStatus, job_id: str) -> Job:
+    job = Job(Path())
+    job.status = status
+    job._id = job_id
+    return job
+
+
+@pytest.mark.parametrize(
+    ("dependencies", "expected"),
+    [
+        pytest.param(
+            {"afterok": "1234567", "afterany": "2345678"},
+            nullcontext(),
+            id="no_job_dependency_doesnt_raise",
+        ),
+        pytest.param(
+            {
+                "afterok": "1234567",
+                "afterany": make_job_with_status_and_id(JobStatus.QUEUED, "2345678"),
+            },
+            nullcontext(),
+            id="a_queud_job_doesnt_raise",
+        ),
+        pytest.param(
+            {
+                "afterok": "1234567",
+                "afterany": make_job_with_status_and_id(JobStatus.PREPARED, "2345678"),
+            },
+            pytest.raises(ValueError, match=r"2345678.*JobStatus.PREPARED"),
+            id="a_prepared_job_raises",
+        ),
+        pytest.param(
+            {
+                "afterok": [
+                    "1234567",
+                    make_job_with_status_and_id(JobStatus.UNPREPARED, "2345678"),
+                ],
+                "afterany": make_job_with_status_and_id(JobStatus.PREPARED, "3456789"),
+            },
+            pytest.raises(
+                ValueError,
+                match=r"2345678.*JobStatus.UNPREPARED.*\n.*3456789.*JobStatus.PREPARED",
+            ),
+            id="different_raising_jobs_are_all_listed",
+        ),
+    ],
+)
+def test_pbs_validate_dependency_job_status(
+    dependencies: dict[str, Job | str | list[Job | str]],
+    expected: contextlib.AbstractContextManager,
+) -> None:
+    with expected:
+        Pbs()._validate_dependencies_jobs_status(dependencies=dependencies)
 
 
 @pytest.mark.parametrize(
