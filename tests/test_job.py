@@ -692,6 +692,24 @@ def test_pbs_build_dependencies_string_from_string_ids(
     assert Pbs()._build_dependency_string(dependencies=dependencies) == expected
 
 
+def test_pbs_build_dependencies_string_validates_type(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    validate_calls = []
+
+    def mock_validate(dependency_type: str) -> None:
+        validate_calls.append(dependency_type)
+
+    monkeypatch.setattr(Pbs, "_validate_dependency_type", mock_validate)
+
+    dependencies = {"afterok": "1234567", "afterany": ["2345678", "3456789"]}
+    Pbs()._build_dependency_string(
+        dependencies=dependencies,
+    )
+
+    assert all(dependency_type in validate_calls for dependency_type in dependencies)
+
+
 @pytest.mark.parametrize(
     ("dependencies", "expected"),
     [
