@@ -210,6 +210,7 @@ class Pbs(Scheduler):
         cls,
         dependencies: dict[str, Job | str | list[Job | str]],
     ) -> dict[str, list[str]]:
+        """Replace all ``Job`` instances by their ID string."""
         parsed_dependencies = {}
         for key, value in dependencies.items():
             parsed_values = value if isinstance(value, list) else [value]
