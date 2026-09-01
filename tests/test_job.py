@@ -614,6 +614,21 @@ def test_pbs_validate_dependency_job_status(
         Pbs()._validate_dependencies_jobs_status(dependencies=dependencies)
 
 
+def test_pbs_validate_dependency_type() -> None:
+    pbs = Pbs()
+
+    # Supported dependency type shouldn't raise
+    pbs._validate_dependency_type("afterok")
+
+    # Unsupported dependency type should raise
+    with pytest.raises(ValueError) as e:
+        pbs._validate_dependency_type("afterdummy")
+
+    assert e.match("Unsupported dependency type 'afterdummy'")
+    for supported in Pbs._VALID_DEPENDENCY_TYPES:
+        assert e.match(supported)
+
+
 @pytest.mark.parametrize(
     ("dependencies", "expected"),
     [
