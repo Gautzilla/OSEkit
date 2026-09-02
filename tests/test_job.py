@@ -494,9 +494,9 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
     def mock_submit(
         self: Scheduler,
         job: Job,
-        dependency: Job | str | None = None,
+        dependencies: Job | str | None = None,
     ) -> None:
-        submitted_jobs.append((job.name, dependency))
+        submitted_jobs.append((job, dependencies))
 
     def mock_update_status(self: Scheduler, job: Job) -> JobStatus:
         return job.status
@@ -516,11 +516,23 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
     job_builder = JobBuilder()
     job_builder.jobs = jobs
 
-    dependencies = {"prepared": jobs[0]}
+    unprepared_job = job_builder.jobs[0]
+    prepared_job = job_builder.jobs[1]
+
+    dependencies = {
+        prepared_job: {"beforeok": unprepared_job},
+        unprepared_job: {"afterany": prepared_job},
+    }
 
     job_builder.submit(dependencies=dependencies)
 
-    assert submitted_jobs == [("prepared", jobs[0])]
+    # Only the prepared job should be submitted
+    assert len(submitted_jobs) == 1
+    submitted_job = submitted_jobs[0]
+    assert submitted_job[0] == prepared_job
+
+    # Only the submitted job dependencies should be injected
+    assert submitted_job[1] == dependencies[prepared_job]
 
 
 def test_pbs_build_dependencies_string_validates_type(

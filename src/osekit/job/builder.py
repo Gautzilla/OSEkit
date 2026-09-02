@@ -112,24 +112,33 @@ class JobBuilder:
 
     def submit(
         self,
-        dependencies: dict[str, Job | list[Job]] | None = None,
+        dependencies: dict[Job, dict[str, str | Job | list[str | Job]]] | None = None,
     ) -> None:
         """Submit all prepared jobs to the scheduler system.
 
         Parameters
         ----------
-        dependencies: dict[str, Job | list[Job]] | None
-            Optional dictionary mapping job names to their dependencies.
-            Example: ``{"job2": job1, "job3": [job1, job2]}``
+        dependencies: dict[Job, dict[str, str | Job | list[str | Job]]] | None
+            Optional mapping of the jobs dependencies.
+
+            For each key (which is a job), the value is a
+            dictionary explaining its dependencies.
+
+            Such dictionary follows the following format:
+            The keys of the dictionary are the dependency types,
+            that are proper to the scheduler.
+            The values are the  other jobs (or their ID) ``job`` depends on
+            with the given dependency type.
+
+            If ``None``, the jobs are submitted without any dependency.
 
         """
+        dependencies = dependencies or {}
         for job in self.jobs:
             if self.scheduler.update_status(job=job) is not JobStatus.PREPARED:
                 continue
 
             # Check if this job has dependencies
-            depend_on = None
-            if dependencies and job.name in dependencies:
-                depend_on = dependencies[job.name]
+            job_dependencies = dependencies.get(job, None)
 
-            self.scheduler.submit(job=job, dependencies=depend_on)
+            self.scheduler.submit(job=job, dependencies=job_dependencies)
