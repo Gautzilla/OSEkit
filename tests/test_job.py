@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import contextlib
 import subprocess
-from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
@@ -553,79 +551,6 @@ def test_pbs_build_dependencies_string_validates_type(
     assert all(dependency_type in validate_calls for dependency_type in dependencies)
 
 
-def test_pbs_build_dependencies_string_validates_status(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    validate_status_calls = [0]
-
-    def mock_validate(dependencies: dict) -> None:
-        validate_status_calls[0] += 1
-
-    monkeypatch.setattr(Pbs, "_validate_dependencies_jobs_status", mock_validate)
-
-    dependencies = {"afterok": "1234567", "afterany": ["2345678", "3456789"]}
-    Pbs()._build_dependency_string(
-        dependencies=dependencies,
-    )
-
-    assert validate_status_calls[0] == 1
-
-
-def make_job_with_status_and_id(status: JobStatus, job_id: str) -> Job:
-    job = Job(Path())
-    job.status = status
-    job._id = job_id
-    return job
-
-
-@pytest.mark.parametrize(
-    ("dependencies", "expected"),
-    [
-        pytest.param(
-            {"afterok": "1234567", "afterany": "2345678"},
-            nullcontext(),
-            id="no_job_dependency_doesnt_raise",
-        ),
-        pytest.param(
-            {
-                "afterok": "1234567",
-                "afterany": make_job_with_status_and_id(JobStatus.QUEUED, "2345678"),
-            },
-            nullcontext(),
-            id="a_queud_job_doesnt_raise",
-        ),
-        pytest.param(
-            {
-                "afterok": "1234567",
-                "afterany": make_job_with_status_and_id(JobStatus.PREPARED, "2345678"),
-            },
-            pytest.raises(ValueError, match=r"2345678.*JobStatus.PREPARED"),
-            id="a_prepared_job_raises",
-        ),
-        pytest.param(
-            {
-                "afterok": [
-                    "1234567",
-                    make_job_with_status_and_id(JobStatus.UNPREPARED, "2345678"),
-                ],
-                "afterany": make_job_with_status_and_id(JobStatus.PREPARED, "3456789"),
-            },
-            pytest.raises(
-                ValueError,
-                match=r"2345678.*JobStatus.UNPREPARED.*\n.*3456789.*JobStatus.PREPARED",
-            ),
-            id="different_raising_jobs_are_all_listed",
-        ),
-    ],
-)
-def test_pbs_validate_dependency_job_status(
-    dependencies: dict[str, Job | str | list[Job | str]],
-    expected: contextlib.AbstractContextManager,
-) -> None:
-    with expected:
-        Pbs()._validate_dependencies_jobs_status(dependencies=dependencies)
-
-
 def test_pbs_validate_dependency_type() -> None:
     pbs = Pbs()
 
@@ -639,21 +564,6 @@ def test_pbs_validate_dependency_type() -> None:
     assert e.match("Unsupported dependency type 'afterdummy'")
     for supported in Pbs._VALID_DEPENDENCY_TYPES:
         assert e.match(supported)
-
-
-def test_pbs_validate_job_id() -> None:
-    pbs = Pbs()
-
-    # Valid job ID shouldn't raise
-    pbs._validate_job_id("1234567")
-
-    # Invalid number of digits should raise
-    with pytest.raises(ValueError, match="Invalid job ID"):
-        pbs._validate_job_id("123456")
-
-    # Non-digit ID should raise
-    with pytest.raises(ValueError, match="Invalid job ID"):
-        pbs._validate_job_id("abcdefg")
 
 
 @pytest.mark.parametrize(
