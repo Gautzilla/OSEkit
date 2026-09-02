@@ -132,4 +132,4 @@ class JobBuilder:
             if dependencies and job.name in dependencies:
                 depend_on = dependencies[job.name]
 
-            self.scheduler.submit(job=job, dependency=depend_on)
+            self.scheduler.submit(job=job, dependencies=depend_on)

@@ -725,7 +725,7 @@ def test_submit_pbs_adds_dependency_flag(
     monkeypatch.setattr(subprocess, "run", fake_run)
     monkeypatch.setattr(Pbs, "update_status", mock_update_status)
 
-    scheduler.submit(job=job, dependency={"afterok": "1234567"})
+    scheduler.submit(job=job, dependencies={"afterok": "1234567"})
 
     assert "-W" in captured_cmd["cmd"]
     assert "depend=afterok:1234567" in captured_cmd["cmd"]

@@ -57,7 +57,7 @@ class Scheduler(ABC):
     def submit(
         self,
         job: Job,
-        dependency: dict[str, Job | str | list[Job | str]] | None = None,
+        dependencies: dict[str, Job | str | list[Job | str]] | None = None,
     ) -> None:
         """Submit the job to the scheduler.
 
@@ -65,7 +65,7 @@ class Scheduler(ABC):
         ----------
         job: Job
             Job to submit to the scheduler.
-        dependency: dict[str, Job | str | list[Job|str]]
+        dependencies: dict[str, Job | str | list[Job|str]]
             The dependencies of the submitted job.
             The keys of the dictionary are the dependency types,
             that are proper to the scheduler.

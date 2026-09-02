@@ -18,6 +18,8 @@ class Pbs(Scheduler):
             "beforeok",
             "beforenotok",
             "beforeany",
+            "on",
+            "runone",
         },
     )
     JOB_FILE_EXTENSION = "pbs"
@@ -81,7 +83,7 @@ class Pbs(Scheduler):
     def submit(
         self,
         job: Job,
-        dependency: dict[str, Job | str | list[Job | str]] | None = None,
+        dependencies: dict[str, Job | str | list[Job | str]] | None = None,
     ) -> None:
         """Submit the job to the scheduler.
 
@@ -89,7 +91,7 @@ class Pbs(Scheduler):
         ----------
         job: Job
             Job to submit to the scheduler.
-        dependency: dict[str, Job | str | list[Job|str]]
+        dependencies: dict[str, Job | str | list[Job|str]]
             The dependencies of the submitted job.
             The keys of the dictionary are the dependency types,
             see https://help.altair.com/2022.1.0/PBS%20Professional/PBSReferenceGuide2022.1.pdf#page=151
@@ -105,8 +107,8 @@ class Pbs(Scheduler):
 
         cmd = ["qsub"]
 
-        if dependency is not None:
-            dependency_str = self._build_dependency_string(dependency)
+        if dependencies is not None:
+            dependency_str = self._build_dependency_string(dependencies)
             if dependency_str:
                 cmd.extend(["-W", f"depend={dependency_str}"])
 
@@ -220,52 +222,7 @@ class Pbs(Scheduler):
             ]
             parsed_dependencies[key] = parsed_values
 
-        for job_ids in parsed_dependencies.values():
-            for job_id in job_ids:
-                cls._validate_job_id(job_id=job_id)
-
         return parsed_dependencies
-
-    @staticmethod
-    def _validate_job_id(job_id: str) -> None:
-        job_id_length = 7
-        if not job_id.isdigit() or len(job_id) != job_id_length:
-            msg = (
-                f"Invalid job ID '{job_id}'. "
-                f"Job IDs must be {job_id_length} digits long."
-            )
-            raise ValueError(msg)
-
-    @staticmethod
-    def _validate_dependencies_jobs_status(
-        dependencies: dict[str, Job | str | list[Job | str]],
-    ) -> None:
-        """Validate the status of the dependencies jobs.
-
-        Raise a ValueError if one or more ``Job`` instance
-        from the dependencies values has a status lower than
-        ``JobStatus.QUEUED``.
-
-        """
-        jobs = []
-        for values in dependencies.values():
-            if isinstance(values, Job):
-                jobs.append(values)
-            if isinstance(values, list):
-                jobs.extend(v for v in values if isinstance(v, Job))
-        unsubmitted_jobs = []
-        for job in jobs:
-            if job.status.value >= JobStatus.QUEUED.value:
-                continue
-            unsubmitted_jobs.append(job)
-        if not unsubmitted_jobs:
-            return
-
-        msg = "The following job(s) have not been submitted yet:\n\n"
-        msg += "\n".join(
-            f"{job.job_id:.<10}{job.status:.>30}" for job in unsubmitted_jobs
-        )
-        raise ValueError(msg)
 
     @classmethod
     def _build_dependency_string(
@@ -309,10 +266,9 @@ class Pbs(Scheduler):
         'afterany:7894561:4839572'
 
         """
+        # Check that types are valid before submitting
         for dependency_type in dependencies:
             cls._validate_dependency_type(dependency_type=dependency_type)
-
-        cls._validate_dependencies_jobs_status(dependencies=dependencies)
 
         id_str = cls._parse_job_ids(dependencies=dependencies)
 
