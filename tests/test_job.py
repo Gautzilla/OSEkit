@@ -162,10 +162,9 @@ def test_write_pbs(tmp_path: Path) -> None:
         for line in content
     )
 
-    assert (
-        ". /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate osekit"
-        in content
-    )
+    assert ". /appli/anaconda/latest/etc/profile.d/conda.sh" in content
+    assert "conda activate osekit" in content
+
     last = content[-1]
     assert last.startswith(f"python {script}")
     assert "--vieille face" in last
