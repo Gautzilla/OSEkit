@@ -34,6 +34,15 @@ class JobBuilder:
         self.scheduler = scheduler or Pbs()
         self.jobs = []
 
+    @property
+    def jobs(self) -> list[Job]:
+        """Return the jobs created by this job builder."""
+        return self._jobs
+
+    @jobs.setter
+    def jobs(self, jobs: list[Job]) -> None:
+        self._jobs = jobs
+
     def create_jobs(
         self,
         nb_tasks: int,
